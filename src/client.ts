@@ -1,9 +1,6 @@
+import * as auth from "./auth";
 import { initLocalGraphQLServer } from "./localServer";
-
-type UserPool = {
-  userPoolId: String;
-  clientId: String;
-};
+import cache from "./util/cache";
 
 async function initUser() {
   // TODO: implement
@@ -13,14 +10,24 @@ async function initUser() {
 export async function createClient({
   typeDefs,
   resolvers,
-  poolData,
+  userpool,
   endpoint,
 }: {
   typeDefs: string;
   resolvers: any;
-  poolData: UserPool;
+  userpool: {
+    UserPoolId: string;
+    ClientId: string;
+  };
   endpoint: string;
 }) {
+  cache.set("userpool", userpool);
+  cache.set("endpoint", endpoint);
   initLocalGraphQLServer({ resolvers, typeDefs });
   const session = initUser();
+
+  return {
+    signIn: auth.signIn,
+    signUp: auth.signUp,
+  };
 }

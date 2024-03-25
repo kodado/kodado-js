@@ -3,7 +3,7 @@ import { sign, hash } from "tweetnacl";
 import * as secretbox from "./secretbox";
 import { decodeUTF8, encodeBase64 } from "tweetnacl-util";
 
-const HASH_ROUNDS = 500;
+export const HASH_ROUNDS = 500;
 
 type SecretKeyPair = {
   encryptionSecretKey: Uint8Array;

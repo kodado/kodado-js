@@ -1,10 +1,18 @@
+import { encodeBase64 } from "tweetnacl-util";
+
 import {
+  UsernameAlreadyExistsError,
   EmailAndPasswordRequiredError,
   WrongCredentialsError,
 } from "../errors/authErrors";
-import { verifyCognitoUser } from "./cognito";
-import { decryptPrivateKeys } from "../crypto/keys";
-import { getUserProfile } from "./api";
+import { verifyCognitoUser, createCognitoUser } from "./cognito";
+import {
+  decryptPrivateKeys,
+  generateKeys,
+  encryptPrivateKeys,
+  HASH_ROUNDS,
+} from "../crypto/keys";
+import { getUserProfile, saveUserProfile } from "./api";
 
 export async function signIn({
   email,
@@ -43,4 +51,49 @@ export async function signIn({
       }
     }
   }
+}
+
+export async function signUp({
+  email,
+  password,
+  nickname,
+  fullName,
+  companyName,
+}: {
+  email: string;
+  password: string;
+  nickname: string;
+  fullName?: string;
+  companyName?: string;
+}) {
+  const keys = generateKeys();
+  const encryptedPrivateKeys: string = encryptPrivateKeys(keys, password);
+
+  try {
+    await createCognitoUser({
+      username: email,
+      password,
+      nickname,
+      encryptedPrivateKeys,
+      fullName,
+      companyName,
+    });
+  } catch (e) {
+    throw new UsernameAlreadyExistsError();
+  }
+
+  const userData = {
+    username: nickname,
+    fullName,
+    companyName,
+    appId: "testApp",
+    encryptionPublicKey: encodeBase64(keys.encryptionPublicKey),
+    signPublicKey: encodeBase64(keys.signPublicKey),
+    hashRounds: HASH_ROUNDS,
+    email,
+  };
+
+  await saveUserProfile(userData);
+
+  return userData;
 }
