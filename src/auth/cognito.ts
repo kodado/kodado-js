@@ -9,6 +9,7 @@ import {
 } from "amazon-cognito-identity-js";
 
 import cache from "../util/cache";
+import { WrongCredentialsError } from "../errors/authErrors";
 
 type UserAttributes = {
   username: string;
@@ -50,12 +51,38 @@ export async function verifyCognitoUser({
   );
 
   if (session instanceof CognitoUser) {
-    // TODO: implement
-    // cache.set("mfaSession", { username, password, user: session });
+    cache.set("mfaSession", { email, password, user: session });
+    // @ts-expect-error TODO: fix
     return { mfaRequired: true };
   }
 
   return session;
+}
+
+export async function signInCognitoUser({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) {
+  try {
+    const session: CognitoUserSession | CognitoUser = await verifyCognitoUser({
+      email,
+      password,
+    });
+
+    return session;
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      if (
+        e.name === "UserNotFoundException" ||
+        e.name === "NotAuthorizedException"
+      ) {
+        throw new WrongCredentialsError();
+      }
+    }
+  }
 }
 
 export async function createCognitoUser({
@@ -111,4 +138,13 @@ export async function createCognitoUser({
       }
     );
   });
+}
+
+export function signOutCognitoUser() {
+  const userPool = new CognitoUserPool(cache.get("userpool"));
+  const user: CognitoUser | null = userPool.getCurrentUser();
+
+  if (user) {
+    user.signOut();
+  }
 }

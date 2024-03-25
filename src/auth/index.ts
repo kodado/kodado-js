@@ -1,18 +1,72 @@
 import { encodeBase64 } from "tweetnacl-util";
+import { CognitoUserSession } from "amazon-cognito-identity-js";
 
 import {
   UsernameAlreadyExistsError,
   EmailAndPasswordRequiredError,
-  WrongCredentialsError,
+  AlreadySignedInError,
 } from "../errors/authErrors";
-import { verifyCognitoUser, createCognitoUser } from "./cognito";
+
+import {
+  createCognitoUser,
+  signOutCognitoUser,
+  signInCognitoUser,
+} from "./cognito";
+
 import {
   decryptPrivateKeys,
   generateKeys,
   encryptPrivateKeys,
   HASH_ROUNDS,
 } from "../crypto/keys";
+
 import { getUserProfile, saveUserProfile } from "./api";
+import cache from "../util/cache";
+
+async function setSession(
+  username: string,
+  password: string,
+  session: CognitoUserSession,
+  mfaEnabled: boolean
+) {
+  const idToken = session.getIdToken();
+
+  const { encryptionSecretKey, signSecretKey } = decryptPrivateKeys(
+    password,
+    idToken.payload["custom:encryptedPrivateKeys"]
+  );
+
+  const { encryptionPublicKey, signPublicKey, imageUrl } = await getUserProfile(
+    idToken.payload.nickname,
+    session.getIdToken().getJwtToken()
+  );
+
+  const user = {
+    email: username,
+    nickname: idToken.payload.nickname,
+    fullName: idToken.payload.name,
+    imageUrl,
+    companyName: idToken.payload["custom:companyName"],
+    emailNotifications: idToken.payload["custom:emailNotifications"]
+      ? JSON.parse(idToken.payload["custom:emailNotifications"])
+      : {},
+    userId: idToken.payload.sub,
+    keys: {
+      encryptionSecretKey,
+      encryptionPublicKey,
+      signSecretKey,
+      signPublicKey,
+    },
+    mfaEnabled,
+    idToken: session.getIdToken().getJwtToken(),
+    session,
+    publicKeys: [],
+  };
+
+  cache.set("user", user);
+
+  return user;
+}
 
 export async function signIn({
   email,
@@ -23,33 +77,16 @@ export async function signIn({
 }) {
   if (!email || !password) throw new EmailAndPasswordRequiredError();
 
-  // TODO: implement
-  // if (cache.get("user")) throw new AlreadySignedInError();
+  if (cache.get("user")) throw new AlreadySignedInError();
 
-  try {
-    const session: CognitoUserSession | CognitoUser = await verifyCognitoUser({
-      email,
-      password,
-    });
+  const session = await signInCognitoUser({ email, password });
 
-    // MFA is required
-    if (session instanceof CognitoUser) {
-      // TODO: implement
-      // cache.set("mfaSession", { username, password, user: session });
-      return { mfaRequired: true };
-    }
+  if (!session) {
+    return;
+  }
 
-    // MFA is not required
-    // return await setSession(username, password, session, false);
-  } catch (e: unknown) {
-    if (e instanceof Error) {
-      if (
-        e.name === "UserNotFoundException" ||
-        e.name === "NotAuthorizedException"
-      ) {
-        throw new WrongCredentialsError();
-      }
-    }
+  if (session instanceof CognitoUserSession) {
+    return await setSession(email, password, session, false);
   }
 }
 
@@ -96,4 +133,10 @@ export async function signUp({
   await saveUserProfile(userData);
 
   return userData;
+}
+
+export function signOut() {
+  cache.set("user", null);
+
+  signOutCognitoUser();
 }

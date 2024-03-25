@@ -1,6 +1,6 @@
 import { expect, describe, it } from "bun:test";
-import fs from "fs";
-import path from "path";
+// import fs from "fs";
+// import path from "path";
 
 import { createClient } from "../src/index";
 import typeDefs from "./fixtures/schema";
@@ -54,64 +54,70 @@ describe("signUp", () => {
   });
 });
 
-// describe("signIn", () => {
-//   it("Should sign the user in", async () => {
-//     const session = await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//
-//     expect(session.mfaRequired).toBeFalsy();
-//     expect(session.email).toBe("libTestUser@turingpoint.de");
-//     expect(session.nickname).toBe("libTestUser");
-//     expect(session.fullName).toBe("Lib Test User");
-//     expect(session.companyName).toBe("CompanyXYZ");
-//     expect(session.imageId).toBe(undefined);
-//     expect(session).toHaveProperty("keys");
-//     expect(session).toHaveProperty("keys.encryptionPublicKey");
-//     expect(session).toHaveProperty("keys.encryptionSecretKey");
-//     expect(session).toHaveProperty("keys.signPublicKey");
-//     expect(session).toHaveProperty("keys.signSecretKey");
-//     expect(session).toHaveProperty("userId");
-//
-//     signOut();
-//   });
-//
-//   it("Should throw error if user is not found", async () => {
-//     try {
-//       await signIn({ username: "notexisting@test.de", password: "Abcd1234!" });
-//     } catch (e) {
-//       expect(e).toBeInstanceOf(WrongCredentialsError);
-//     }
-//   });
-//
-//   it("Should throw an error if password is wrong", async () => {
-//     try {
-//       await signIn({
-//         username: "libTestUser@turingpoint.de",
-//         password: "wrongpw",
-//       });
-//     } catch (e) {
-//       expect(e).toBeInstanceOf(WrongCredentialsError);
-//     }
-//   });
-//
-//   it("Should throw error if user is already signed in.", async () => {
-//     try {
-//       await signIn({
-//         username: "libTestUser@turingpoint.de",
-//         password: "Abcd1234!",
-//       });
-//       await signIn({
-//         username: "libTestUser@turingpoint.de",
-//         password: "Abcd1234!",
-//       });
-//     } catch (e) {
-//       expect(e).toBeInstanceOf(AlreadySignedInError);
-//     }
-//     signOut();
-//   });
-// });
+describe("signIn", () => {
+  it("Should sign the user in", async () => {
+    const session = await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    if (!session) {
+      expect(false).toBe(true);
+      return;
+    }
+
+    expect(session.email).toBe("auth-lib-user@turingpoint.de");
+    expect(session.nickname).toBe("auth-lib-user");
+    expect(session.fullName).toBe("Auth Lib User");
+    expect(session.companyName).toBe("CompanyXYZ");
+    expect(session).toHaveProperty("keys");
+    expect(session).toHaveProperty("keys.encryptionPublicKey");
+    expect(session).toHaveProperty("keys.encryptionSecretKey");
+    expect(session).toHaveProperty("keys.signPublicKey");
+    expect(session).toHaveProperty("keys.signSecretKey");
+    expect(session).toHaveProperty("userId");
+
+    client.signOut();
+  });
+
+  it("Should throw error if user is not found", async () => {
+    try {
+      await client.signIn({
+        email: "notexisting@test.de",
+        password: "Abcd1234!",
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(WrongCredentialsError);
+    }
+  });
+
+  it("Should throw an error if password is wrong", async () => {
+    try {
+      await client.signIn({
+        email: "auth-lib-user@turingpoint.de",
+        password: "wrongpw",
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(WrongCredentialsError);
+    }
+  });
+
+  it("Should throw error if user is already signed in.", async () => {
+    try {
+      await client.signIn({
+        email: "auth-lib-user@turingpoint.de",
+        password: "Abcd1234!",
+      });
+      await client.signIn({
+        email: "auth-lib-user@turingpoint.de",
+        password: "Abcd1234!",
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(AlreadySignedInError);
+    }
+    client.signOut();
+  });
+});
 //
 // describe("updateProfile", () => {
 //   it("Should update the profile", async () => {
