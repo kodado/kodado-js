@@ -13,6 +13,7 @@ import {
   signInCognitoUser,
   getCognitoUser,
   deleteCognitoUser,
+  updateCognitoProfile,
 } from "./cognito";
 
 import {
@@ -22,7 +23,12 @@ import {
   HASH_ROUNDS,
 } from "../crypto/keys";
 
-import { deleteUserProfile, getUserProfile, saveUserProfile } from "./api";
+import {
+  deleteUserProfile,
+  getUserProfile,
+  saveUserProfile,
+  updateUserProfile,
+} from "./api";
 import cache from "../util/cache";
 
 async function setSession(
@@ -135,6 +141,19 @@ export async function signUp({
   await saveUserProfile(userData);
 
   return userData;
+}
+
+export async function updateProfile({
+  fullName,
+  companyName,
+  emailNotifications,
+}: {
+  fullName?: string;
+  companyName?: string;
+  emailNotifications?: string;
+}) {
+  await updateUserProfile({ fullName, companyName, emailNotifications });
+  await updateCognitoProfile({ fullName, companyName, emailNotifications });
 }
 
 export function signOut() {

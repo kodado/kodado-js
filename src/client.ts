@@ -25,6 +25,7 @@ export async function createClient({
     signIn: auth.signIn,
     signUp: auth.signUp,
     signOut: auth.signOut,
+    updateProfile: auth.updateProfile,
     deleteUser: auth.deleteUser,
   };
 }

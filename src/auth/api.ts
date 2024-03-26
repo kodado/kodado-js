@@ -34,6 +34,28 @@ export async function saveUserProfile(data: ProfileAttributes) {
   }
 }
 
+export async function updateUserProfile({
+  fullName,
+  companyName,
+  emailNotifications,
+}: {
+  fullName?: string;
+  companyName?: string;
+  emailNotifications?: string;
+}) {
+  try {
+    await fetch(`${cache.get("endpoint")}/auth/profile`, {
+      method: "PUT",
+      body: JSON.stringify({ fullName, companyName, emailNotifications }),
+      headers: {
+        Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+      },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 export async function deleteUserProfile() {
   try {
     await fetch(`${cache.get("endpoint")}/auth`, {

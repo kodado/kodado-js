@@ -9,7 +9,7 @@ import {
 } from "amazon-cognito-identity-js";
 
 import cache from "../util/cache";
-import { WrongCredentialsError } from "../errors/authErrors";
+import { NotSignedInError, WrongCredentialsError } from "../errors/authErrors";
 
 type UserAttributes = {
   username: string;
@@ -154,6 +154,81 @@ export function getCognitoUser() {
   const user: CognitoUser | null = userPool.getCurrentUser();
 
   return user;
+}
+
+async function refreshSession(user: CognitoUser) {
+  const refreshToken = user.getSignInUserSession()?.getRefreshToken();
+
+  if (!refreshToken) {
+    throw new NotSignedInError();
+  }
+
+  return new Promise((resolve) => {
+    user.refreshSession(refreshToken, () => resolve("Token refreshed."));
+  });
+}
+
+export async function updateCognitoProfile({
+  fullName,
+  companyName,
+  emailNotifications,
+}: {
+  fullName?: string;
+  companyName?: string;
+  emailNotifications?: string;
+}) {
+  return new Promise(async (resolve, reject) => {
+    const userPool = new CognitoUserPool(cache.get("userpool"));
+    const user: CognitoUser | null = userPool.getCurrentUser();
+
+    if (!user) return reject("Not signed in");
+
+    user.setSignInUserSession(cache.get("user").session);
+    await refreshSession(user);
+
+    const attributes = [];
+
+    if (fullName) {
+      attributes.push(
+        new CognitoUserAttribute({
+          Name: "name",
+          Value: fullName,
+        })
+      );
+    }
+
+    if (companyName) {
+      attributes.push(
+        new CognitoUserAttribute({
+          Name: "custom:companyName",
+          Value: companyName,
+        })
+      );
+    }
+
+    if (emailNotifications) {
+      attributes.push(
+        new CognitoUserAttribute({
+          Name: "custom:emailNotifications",
+          Value: JSON.stringify(emailNotifications),
+        })
+      );
+    }
+
+    user.updateAttributes(attributes, async (err: any, result: any) => {
+      if (err) return reject(err);
+
+      cache.set("user", {
+        ...cache.get("user"),
+        fullName,
+        companyName,
+        emailNotifications,
+      });
+
+      await refreshSession(user);
+      return resolve(result);
+    });
+  });
 }
 
 export async function deleteCognitoUser(user: CognitoUser) {

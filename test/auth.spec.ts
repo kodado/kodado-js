@@ -122,30 +122,36 @@ describe("signIn", () => {
     client.signOut();
   });
 });
-//
-// describe("updateProfile", () => {
-//   it("Should update the profile", async () => {
-//     await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//
-//     await updateProfile({
-//       fullName: "updated fullName",
-//       companyName: "updated companyName",
-//     });
-//
-//     signOut();
-//     const session = await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//     expect(session.fullName).toBe("updated fullName");
-//     expect(session.companyName).toBe("updated companyName");
-//     signOut();
-//   });
-// });
-//
+
+describe("updateProfile", () => {
+  it("Should update the profile", async () => {
+    await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    await client.updateProfile({
+      fullName: "updated fullName",
+      companyName: "updated companyName",
+    });
+
+    client.signOut();
+    const session = await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    if (!session) {
+      expect(false).toBe(true);
+      return;
+    }
+
+    expect(session.fullName).toBe("updated fullName");
+    expect(session.companyName).toBe("updated companyName");
+    client.signOut();
+  });
+});
+
 // describe("uploadProfileImage", () => {
 //   it("Should upload a profile image", async () => {
 //     await signIn({
