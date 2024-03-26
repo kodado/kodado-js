@@ -8,7 +8,6 @@ import {
   CognitoUserAttribute,
 } from "amazon-cognito-identity-js";
 
-import cache from "../util/cache";
 import { NotSignedInError, WrongCredentialsError } from "../errors/authErrors";
 
 type UserAttributes = {
@@ -180,22 +179,25 @@ export class CognitoClient {
     });
   }
 
-  updateCognitoProfile({
-    fullName,
-    companyName,
-    emailNotifications,
-  }: {
-    fullName?: string;
-    companyName?: string;
-    emailNotifications?: string;
-  }) {
+  updateCognitoProfile(
+    session: CognitoUserSession,
+    {
+      fullName,
+      companyName,
+      emailNotifications,
+    }: {
+      fullName?: string;
+      companyName?: string;
+      emailNotifications?: string;
+    }
+  ) {
     return new Promise(async (resolve, reject) => {
       const userPool = new CognitoUserPool(this.userpool);
       const user: CognitoUser | null = userPool.getCurrentUser();
 
       if (!user) return reject("Not signed in");
 
-      user.setSignInUserSession(cache.get("user").session);
+      user.setSignInUserSession(session);
       await this.refreshSession(user);
 
       const attributes = [];
@@ -229,13 +231,6 @@ export class CognitoClient {
 
       user.updateAttributes(attributes, async (err: any, result: any) => {
         if (err) return reject(err);
-
-        cache.set("user", {
-          ...cache.get("user"),
-          fullName,
-          companyName,
-          emailNotifications,
-        });
 
         await this.refreshSession(user);
         return resolve(result);

@@ -14,13 +14,36 @@ import {
   HASH_ROUNDS,
 } from "../crypto/keys";
 
-import cache from "../util/cache";
 import { CognitoClient } from "./CognitoClient";
 import { AuthApiClient } from "./AuthApiClient";
+
+type Keys = {
+  encryptionSecretKey: string;
+  encryptionPublicKey: string;
+  signSecretKey: string;
+  signPublicKey: string;
+};
+
+type User = {
+  email: string;
+  nickname: string;
+  fullName: string;
+  imageUrl: string;
+  companyName: string;
+  emailNotifications: { [key: string]: boolean };
+  userId: string;
+  keys: Keys;
+  mfaEnabled: boolean;
+  publicKeys: string[];
+  idToken: string;
+};
 
 export class AuthClient {
   private cognitoClient: CognitoClient;
   private apiClient: AuthApiClient;
+  session: CognitoUserSession | null;
+  keys: Keys | null;
+  user: User | null;
 
   constructor({
     endpoint,
@@ -31,12 +54,15 @@ export class AuthClient {
   }) {
     this.cognitoClient = new CognitoClient(userpool);
     this.apiClient = new AuthApiClient(endpoint);
+    this.session = null;
+    this.keys = null;
+    this.user = null;
   }
 
   async signIn({ email, password }: { email: string; password: string }) {
     if (!email || !password) throw new EmailAndPasswordRequiredError();
 
-    if (cache.get("user")) throw new AlreadySignedInError();
+    if (this.session) throw new AlreadySignedInError();
 
     const session = await this.cognitoClient.signInCognitoUser({
       email,
@@ -48,54 +74,53 @@ export class AuthClient {
     }
 
     if (session instanceof CognitoUserSession) {
-      return await this.setSession(email, password, session, false);
-    }
-  }
+      this.session = session;
+      this.apiClient.setSession(session);
 
-  private async setSession(
-    username: string,
-    password: string,
-    session: CognitoUserSession,
-    mfaEnabled: boolean
-  ) {
-    const idToken = session.getIdToken();
+      const idToken = session.getIdToken();
 
-    const { encryptionSecretKey, signSecretKey } = decryptPrivateKeys(
-      password,
-      idToken.payload["custom:encryptedPrivateKeys"]
-    );
-
-    const { encryptionPublicKey, signPublicKey, imageUrl } =
-      await this.apiClient.getUserProfile(
-        idToken.payload.nickname,
-        session.getIdToken().getJwtToken()
+      const { encryptionSecretKey, signSecretKey } = decryptPrivateKeys(
+        password,
+        idToken.payload["custom:encryptedPrivateKeys"]
       );
 
-    const user = {
-      email: username,
-      nickname: idToken.payload.nickname,
-      fullName: idToken.payload.name,
-      imageUrl,
-      companyName: idToken.payload["custom:companyName"],
-      emailNotifications: idToken.payload["custom:emailNotifications"]
-        ? JSON.parse(idToken.payload["custom:emailNotifications"])
-        : {},
-      userId: idToken.payload.sub,
-      keys: {
+      const { encryptionPublicKey, signPublicKey, imageUrl } =
+        await this.apiClient.getUserProfile(
+          idToken.payload.nickname,
+          this.session.getIdToken().getJwtToken()
+        );
+
+      this.keys = {
         encryptionSecretKey,
         encryptionPublicKey,
         signSecretKey,
         signPublicKey,
-      },
-      mfaEnabled,
-      idToken: session.getIdToken().getJwtToken(),
-      session,
-      publicKeys: [],
-    };
+      };
 
-    cache.set("user", user);
+      this.user = {
+        email,
+        nickname: idToken.payload.nickname,
+        fullName: idToken.payload.name,
+        imageUrl,
+        companyName: idToken.payload["custom:companyName"],
+        emailNotifications: idToken.payload["custom:emailNotifications"]
+          ? JSON.parse(idToken.payload["custom:emailNotifications"])
+          : {},
+        userId: idToken.payload.sub,
+        keys: {
+          encryptionSecretKey,
+          encryptionPublicKey,
+          signSecretKey,
+          signPublicKey,
+        },
+        // TODO: implement
+        mfaEnabled: false,
+        idToken: session.getIdToken().getJwtToken(),
+        publicKeys: [],
+      };
+    }
 
-    return user;
+    return this.user;
   }
 
   async signUp({
@@ -150,18 +175,25 @@ export class AuthClient {
   }: {
     fullName?: string;
     companyName?: string;
-    emailNotifications?: string;
+    emailNotifications?: { [key: string]: boolean };
   }) {
+    if (!this.user || !this.session) return;
+
     await this.apiClient.updateUserProfile({
       fullName,
       companyName,
-      emailNotifications,
+      emailNotifications: JSON.stringify(emailNotifications),
     });
-    await this.cognitoClient.updateCognitoProfile({
+    await this.cognitoClient.updateCognitoProfile(this.session, {
       fullName,
       companyName,
-      emailNotifications,
+      emailNotifications: JSON.stringify(emailNotifications),
     });
+
+    this.user.fullName = fullName || this.user.fullName;
+    this.user.companyName = companyName || this.user.companyName;
+    this.user.emailNotifications =
+      emailNotifications || this.user.emailNotifications;
   }
 
   async uploadProfileImage(image: any) {
@@ -169,21 +201,27 @@ export class AuthClient {
   }
 
   signOut() {
-    cache.set("user", null);
+    this.user = null;
+    this.session = null;
+    this.keys = null;
 
     this.cognitoClient.signOutCognitoUser();
   }
 
   async deleteUser() {
+    if (!this.session) return;
+
     const user = this.cognitoClient.getCognitoUser();
 
     if (!user) return;
 
-    user.setSignInUserSession(cache.get("user").session);
+    user.setSignInUserSession(this.session);
 
     await this.apiClient.deleteUserProfile();
 
-    cache.set("user", null);
+    this.user = null;
+    this.session = null;
+    this.keys = null;
 
     return this.cognitoClient.deleteCognitoUser(user);
   }

@@ -25,7 +25,6 @@ export async function safelyDeleteUser(
   } catch (e) {}
 }
 
-// TODO: fix type
 export async function recreateUser(
   client: KodadoClient,
   credentials: Credentials

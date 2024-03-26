@@ -1,4 +1,4 @@
-import cache from "../util/cache";
+import { CognitoUserSession } from "amazon-cognito-identity-js";
 
 type ProfileAttributes = {
   username: string;
@@ -11,9 +11,15 @@ type ProfileAttributes = {
 
 export class AuthApiClient {
   private endpoint: string;
+  private session: CognitoUserSession | null;
 
   constructor(endpoint: string) {
     this.endpoint = endpoint;
+    this.session = null;
+  }
+
+  setSession(session: CognitoUserSession) {
+    this.session = session;
   }
 
   async getUserProfile(username: string, idToken: string) {
@@ -52,7 +58,7 @@ export class AuthApiClient {
         method: "PUT",
         body: JSON.stringify({ fullName, companyName, emailNotifications }),
         headers: {
-          Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+          Authorization: this.session?.getIdToken().getJwtToken() || "",
         },
       });
     } catch (e) {
@@ -65,7 +71,7 @@ export class AuthApiClient {
       await fetch(`${this.endpoint}/auth`, {
         method: "DELETE",
         headers: {
-          Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+          Authorization: this.session?.getIdToken().getJwtToken() || "",
         },
       });
     } catch (e) {
@@ -78,7 +84,7 @@ export class AuthApiClient {
       const response = await fetch(`${this.endpoint}/auth/profile/image`, {
         method: "POST",
         headers: {
-          Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+          Authorization: this.session?.getIdToken().getJwtToken() || "",
         },
       });
 

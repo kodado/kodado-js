@@ -57,26 +57,26 @@ describe("signUp", () => {
 
 describe("signIn", () => {
   it("Should sign the user in", async () => {
-    const session = await client.auth.signIn({
+    const user = await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
 
-    if (!session) {
+    if (!user) {
       expect(false).toBe(true);
       return;
     }
 
-    expect(session.email).toBe("auth-lib-user@turingpoint.de");
-    expect(session.nickname).toBe("auth-lib-user");
-    expect(session.fullName).toBe("Auth Lib User");
-    expect(session.companyName).toBe("CompanyXYZ");
-    expect(session).toHaveProperty("keys");
-    expect(session).toHaveProperty("keys.encryptionPublicKey");
-    expect(session).toHaveProperty("keys.encryptionSecretKey");
-    expect(session).toHaveProperty("keys.signPublicKey");
-    expect(session).toHaveProperty("keys.signSecretKey");
-    expect(session).toHaveProperty("userId");
+    expect(user.email).toBe("auth-lib-user@turingpoint.de");
+    expect(user.nickname).toBe("auth-lib-user");
+    expect(user.fullName).toBe("Auth Lib User");
+    expect(user.companyName).toBe("CompanyXYZ");
+    expect(user).toHaveProperty("keys");
+    expect(user).toHaveProperty("keys.encryptionPublicKey");
+    expect(user).toHaveProperty("keys.encryptionSecretKey");
+    expect(user).toHaveProperty("keys.signPublicKey");
+    expect(user).toHaveProperty("keys.signSecretKey");
+    expect(user).toHaveProperty("userId");
 
     client.auth.signOut();
   });
@@ -179,6 +179,7 @@ describe("uploadProfileImage", () => {
 
     if (session) {
       expect(session.imageUrl).toBeTruthy();
+      // @ts-expect-error
       expect(session.imageUrl.indexOf(process.env.KODADO_BUCKET_URL)).not.toBe(
         -1
       );
