@@ -14,5 +14,12 @@
     "bun-plugin-dts": "^0.2.1",
     "@types/bun": "^1.0.0",
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "@graphql-tools/schema": "^10.0.3",
+    "amazon-cognito-identity-js": "^6.3.12",
+    "graphql": "^16.8.1",
+    "tweetnacl": "^1.0.3",
+    "tweetnacl-util": "^0.15.1"
   }
 }

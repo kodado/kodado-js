@@ -1,0 +1,95 @@
+import cache from "../util/cache";
+
+export async function getUserProfile(username: string, idToken: string) {
+  const response = await fetch(
+    `${cache.get("endpoint")}/auth/profile/${username}`,
+    {
+      method: "GET",
+      headers: { Authorization: idToken },
+    }
+  );
+  const data = await response.json();
+
+  return data;
+}
+
+type ProfileAttributes = {
+  username: string;
+  appId: string;
+  encryptionPublicKey: string;
+  signPublicKey: string;
+  hashRounds: number;
+  email: string;
+};
+
+export async function saveUserProfile(data: ProfileAttributes) {
+  try {
+    await fetch(`${cache.get("endpoint")}/auth/signup`, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function updateUserProfile({
+  fullName,
+  companyName,
+  emailNotifications,
+}: {
+  fullName?: string;
+  companyName?: string;
+  emailNotifications?: string;
+}) {
+  try {
+    await fetch(`${cache.get("endpoint")}/auth/profile`, {
+      method: "PUT",
+      body: JSON.stringify({ fullName, companyName, emailNotifications }),
+      headers: {
+        Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+      },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function deleteUserProfile() {
+  try {
+    await fetch(`${cache.get("endpoint")}/auth`, {
+      method: "DELETE",
+      headers: {
+        Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+      },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+export async function uploadUserProfileImage(image: any) {
+  try {
+    const response = await fetch(
+      `${cache.get("endpoint")}/auth/profile/image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    await fetch(data.url, {
+      method: "PUT",
+      body: image,
+    });
+
+    return data;
+  } catch (e) {
+    console.log(e);
+  }
+}
