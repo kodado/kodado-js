@@ -33,5 +33,10 @@ jobs:
           bun install
       - id: test
         name: Run test
+        env:
+          USER_POOL_ID: ${{ secrets.USER_POOL_ID }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          KODADO_URL: ${{ secrets.KODADO_URL }}
+          KODADO_BUCKET_URL: ${{ secrets.KODADO_BUCKET_URL }}
         run: |
           bun test
