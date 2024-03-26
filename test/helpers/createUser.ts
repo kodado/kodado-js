@@ -1,6 +1,3 @@
-import { signIn, signUp, signOut, deleteUser, init } from "../../src/index";
-import typeDefs from "../fixtures/schema";
-
 export type Credentials = {
   email: string;
   password: string;
@@ -9,46 +6,26 @@ export type Credentials = {
   companyName?: string;
 };
 
-export async function safelyDeleteUser(credentials: Credentials) {
-  await init({
-    appId: "test",
-    typeDefs,
-    resolvers: {},
-    poolData: {
-      UserPoolId: process.env.USER_POOL_ID || "",
-      ClientId: process.env.CLIENT_ID || "",
-    },
-    endpoint: process.env.CERTA_URL || "",
-  });
-
+// TODO: fix type
+export async function safelyDeleteUser(client: any, credentials: Credentials) {
   try {
-    signOut();
+    client.signOut();
   } catch {}
 
   try {
-    await signIn({
+    await client.signIn({
       username: credentials.email,
       password: credentials.password,
     });
-    await deleteUser();
+    await client.deleteUser();
   } catch (e) {}
 }
 
-export async function recreateUser(credentials: Credentials) {
-  await init({
-    appId: "test",
-    typeDefs,
-    resolvers: {},
-    poolData: {
-      UserPoolId: process.env.USER_POOL_ID || "",
-      ClientId: process.env.CLIENT_ID || "",
-    },
-    endpoint: process.env.CERTA_URL || "",
-  });
+// TODO: fix type
+export async function recreateUser(client: any, credentials: Credentials) {
+  await safelyDeleteUser(client, credentials);
 
-  await safelyDeleteUser(credentials);
-
-  await signUp({
+  await client.signUp({
     username: credentials.email,
     password: credentials.password,
     nickname: credentials.username,

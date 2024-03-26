@@ -1,4 +1,4 @@
-import { expect, describe, it } from "bun:test";
+import { beforeAll, expect, describe, it } from "bun:test";
 // import fs from "fs";
 // import path from "path";
 
@@ -9,6 +9,7 @@ import {
   WrongCredentialsError,
   UsernameAlreadyExistsError,
 } from "../src/errors/authErrors";
+import { safelyDeleteUser } from "./helpers/createUser";
 
 const client = await createClient({
   typeDefs,
@@ -20,13 +21,13 @@ const client = await createClient({
   endpoint: process.env.CERTA_URL || "",
 });
 
-// beforeAll(async () => {
-//   await safelyDeleteUser({
-//     email: "libTestUser@turingpoint.de",
-//     password: "Abcd1234!",
-//     username: "",
-//   });
-// });
+beforeAll(async () => {
+  await safelyDeleteUser(client, {
+    email: "libTestUser@turingpoint.de",
+    password: "Abcd1234!",
+    username: "",
+  });
+});
 
 describe("signUp", () => {
   it("Should sign up a new user", async () => {
