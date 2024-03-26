@@ -86,6 +86,7 @@ describe("signIn", () => {
         email: "notexisting@test.de",
         password: "Abcd1234!",
       });
+      expect(false).toBe(true);
     } catch (e) {
       expect(e).toBeInstanceOf(WrongCredentialsError);
     }
@@ -97,6 +98,7 @@ describe("signIn", () => {
         email: "auth-lib-user@turingpoint.de",
         password: "wrongpw",
       });
+      expect(false).toBe(true);
     } catch (e) {
       expect(e).toBeInstanceOf(WrongCredentialsError);
     }
@@ -112,6 +114,7 @@ describe("signIn", () => {
         email: "auth-lib-user@turingpoint.de",
         password: "Abcd1234!",
       });
+      expect(false).toBe(true);
     } catch (e) {
       expect(e).toBeInstanceOf(AlreadySignedInError);
     }

@@ -27,7 +27,7 @@ export async function verifyCognitoUser({
   email: string;
   password: string;
 }): Promise<CognitoUserSession | CognitoUser> {
-  const userPool = new CognitoUserPool(cache.get("poolData"));
+  const userPool = new CognitoUserPool(cache.get("userpool"));
   const userData: ICognitoUserData = {
     Username: email,
     Pool: userPool,
