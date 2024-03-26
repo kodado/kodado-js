@@ -11,7 +11,7 @@ import {
 } from "../src/errors/authErrors";
 import { safelyDeleteUser } from "./helpers/createUser";
 
-const client = await createClient({
+const client = createClient({
   typeDefs,
   resolvers: {},
   userpool: {
@@ -31,7 +31,7 @@ beforeAll(async () => {
 
 describe("signUp", () => {
   it("Should sign up a new user", async () => {
-    const result = await client.signUp({
+    const result = await client.auth.signUp({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
       nickname: "auth-lib-user",
@@ -44,7 +44,7 @@ describe("signUp", () => {
 
   it("Should throw error if email was already taken", async () => {
     try {
-      await client.signUp({
+      await client.auth.signUp({
         email: "auth-lib-user@turingpoint.de",
         password: "Abcd1234!",
         nickname: "auth-lib-user",
@@ -57,7 +57,7 @@ describe("signUp", () => {
 
 describe("signIn", () => {
   it("Should sign the user in", async () => {
-    const session = await client.signIn({
+    const session = await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
@@ -78,12 +78,12 @@ describe("signIn", () => {
     expect(session).toHaveProperty("keys.signSecretKey");
     expect(session).toHaveProperty("userId");
 
-    client.signOut();
+    client.auth.signOut();
   });
 
   it("Should throw error if user is not found", async () => {
     try {
-      await client.signIn({
+      await client.auth.signIn({
         email: "notexisting@test.de",
         password: "Abcd1234!",
       });
@@ -95,7 +95,7 @@ describe("signIn", () => {
 
   it("Should throw an error if password is wrong", async () => {
     try {
-      await client.signIn({
+      await client.auth.signIn({
         email: "auth-lib-user@turingpoint.de",
         password: "wrongpw",
       });
@@ -107,11 +107,11 @@ describe("signIn", () => {
 
   it("Should throw error if user is already signed in.", async () => {
     try {
-      await client.signIn({
+      await client.auth.signIn({
         email: "auth-lib-user@turingpoint.de",
         password: "Abcd1234!",
       });
-      await client.signIn({
+      await client.auth.signIn({
         email: "auth-lib-user@turingpoint.de",
         password: "Abcd1234!",
       });
@@ -119,24 +119,24 @@ describe("signIn", () => {
     } catch (e) {
       expect(e).toBeInstanceOf(AlreadySignedInError);
     }
-    client.signOut();
+    client.auth.signOut();
   });
 });
 
 describe("updateProfile", () => {
   it("Should update the profile", async () => {
-    await client.signIn({
+    await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
 
-    await client.updateProfile({
+    await client.auth.updateProfile({
       fullName: "updated fullName",
       companyName: "updated companyName",
     });
 
-    client.signOut();
-    const session = await client.signIn({
+    client.auth.signOut();
+    const session = await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
@@ -148,13 +148,13 @@ describe("updateProfile", () => {
 
     expect(session.fullName).toBe("updated fullName");
     expect(session.companyName).toBe("updated companyName");
-    client.signOut();
+    client.auth.signOut();
   });
 });
 
 describe("uploadProfileImage", () => {
   it("Should upload a profile image", async () => {
-    await client.signIn({
+    await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
@@ -164,18 +164,18 @@ describe("uploadProfileImage", () => {
     );
 
     try {
-      await client.uploadProfileImage(file);
+      await client.auth.uploadProfileImage(file);
     } catch (e) {
       expect(false).toBe(true);
     }
 
-    client.signOut();
+    client.auth.signOut();
 
-    const session = await client.signIn({
+    const session = await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
-    client.signOut();
+    client.auth.signOut();
 
     if (session) {
       expect(session.imageUrl).toBeTruthy();
@@ -188,11 +188,11 @@ describe("uploadProfileImage", () => {
 
 describe("deleteUser", () => {
   it("Should delete the current user", async () => {
-    await client.signIn({
+    await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
-    const success = await client.deleteUser();
+    const success = await client.auth.deleteUser();
 
     expect(success).toBe(true);
   });
