@@ -62,7 +62,6 @@ export class CognitoClient {
     );
 
     if (session instanceof CognitoUser) {
-      // cache.set("mfaSession", { email, password, user: session });
       // @ts-expect-error TODO: fix
       return { mfaRequired: true };
     }
