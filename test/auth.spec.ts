@@ -178,14 +178,15 @@ describe("signIn", () => {
 //   });
 // });
 //
-// describe("deleteUser", () => {
-//   it("Should delete the current user", async () => {
-//     await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//     const success = await deleteUser();
-//
-//     expect(success).toBe(true);
-//   });
-// });
+
+describe("deleteUser", () => {
+  it("Should delete the current user", async () => {
+    await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+    const success = await client.deleteUser();
+
+    expect(success).toBe(true);
+  });
+});

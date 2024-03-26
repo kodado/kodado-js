@@ -33,3 +33,16 @@ export async function saveUserProfile(data: ProfileAttributes) {
     console.log(e);
   }
 }
+
+export async function deleteUserProfile() {
+  try {
+    await fetch(`${cache.get("endpoint")}/auth`, {
+      method: "DELETE",
+      headers: {
+        Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+      },
+    });
+  } catch (e) {
+    console.log(e);
+  }
+}

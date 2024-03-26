@@ -148,3 +148,20 @@ export function signOutCognitoUser() {
     user.signOut();
   }
 }
+
+export function getCognitoUser() {
+  const userPool = new CognitoUserPool(cache.get("userpool"));
+  const user: CognitoUser | null = userPool.getCurrentUser();
+
+  return user;
+}
+
+export async function deleteCognitoUser(user: CognitoUser) {
+  return new Promise((resolve, reject) => {
+    user.deleteUser((err: Error | undefined) => {
+      if (err) reject(err);
+
+      resolve(true);
+    });
+  });
+}

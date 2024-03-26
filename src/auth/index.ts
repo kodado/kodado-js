@@ -11,6 +11,8 @@ import {
   createCognitoUser,
   signOutCognitoUser,
   signInCognitoUser,
+  getCognitoUser,
+  deleteCognitoUser,
 } from "./cognito";
 
 import {
@@ -20,7 +22,7 @@ import {
   HASH_ROUNDS,
 } from "../crypto/keys";
 
-import { getUserProfile, saveUserProfile } from "./api";
+import { deleteUserProfile, getUserProfile, saveUserProfile } from "./api";
 import cache from "../util/cache";
 
 async function setSession(
@@ -139,4 +141,18 @@ export function signOut() {
   cache.set("user", null);
 
   signOutCognitoUser();
+}
+
+export async function deleteUser() {
+  const user = getCognitoUser();
+
+  if (!user) return;
+
+  user.setSignInUserSession(cache.get("user").session);
+
+  await deleteUserProfile();
+
+  cache.set("user", null);
+
+  return deleteCognitoUser(user);
 }

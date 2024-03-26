@@ -25,5 +25,6 @@ export async function createClient({
     signIn: auth.signIn,
     signUp: auth.signUp,
     signOut: auth.signOut,
+    deleteUser: auth.deleteUser,
   };
 }
