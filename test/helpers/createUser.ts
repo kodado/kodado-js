@@ -1,3 +1,5 @@
+import { KodadoClient } from "../../src/KodadoClient";
+
 export type Credentials = {
   email: string;
   password: string;
@@ -6,27 +8,31 @@ export type Credentials = {
   companyName?: string;
 };
 
-// TODO: fix type
-export async function safelyDeleteUser(client: any, credentials: Credentials) {
+export async function safelyDeleteUser(
+  client: KodadoClient,
+  credentials: Credentials
+) {
   try {
-    client.signOut();
+    client.auth.signOut();
   } catch {}
 
   try {
-    await client.signIn({
-      username: credentials.email,
+    await client.auth.signIn({
+      email: credentials.email,
       password: credentials.password,
     });
-    await client.deleteUser();
+    await client.auth.deleteUser();
   } catch (e) {}
 }
 
-// TODO: fix type
-export async function recreateUser(client: any, credentials: Credentials) {
+export async function recreateUser(
+  client: KodadoClient,
+  credentials: Credentials
+) {
   await safelyDeleteUser(client, credentials);
 
-  await client.signUp({
-    username: credentials.email,
+  await client.auth.signUp({
+    email: credentials.email,
     password: credentials.password,
     nickname: credentials.username,
     fullName: credentials.fullName,
