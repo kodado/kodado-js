@@ -68,3 +68,28 @@ export async function deleteUserProfile() {
     console.log(e);
   }
 }
+
+export async function uploadUserProfileImage(image: any) {
+  try {
+    const response = await fetch(
+      `${cache.get("endpoint")}/auth/profile/image`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: cache.get("user").session.getIdToken().getJwtToken(),
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    await fetch(data.url, {
+      method: "PUT",
+      body: image,
+    });
+
+    return data;
+  } catch (e) {
+    console.log(e);
+  }
+}

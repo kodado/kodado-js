@@ -1,6 +1,6 @@
 import { beforeAll, expect, describe, it } from "bun:test";
-// import fs from "fs";
-// import path from "path";
+import fs from "fs";
+import path from "path";
 
 import { createClient } from "../src/index";
 import typeDefs from "./fixtures/schema";
@@ -152,39 +152,39 @@ describe("updateProfile", () => {
   });
 });
 
-// describe("uploadProfileImage", () => {
-//   it("Should upload a profile image", async () => {
-//     await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//     const file = fs.readFileSync(
-//       path.join(__dirname, "./fixtures/testfile.txt")
-//     );
-//
-//     try {
-//       await uploadProfileImage(file);
-//     } catch (e) {
-//       console.log(e);
-//     }
-//
-//     signOut();
-//
-//     const session = await signIn({
-//       username: "libTestUser@turingpoint.de",
-//       password: "Abcd1234!",
-//     });
-//     signOut();
-//
-//     expect(session.imageUrl).toBeTruthy();
-//     expect(
-//       session.imageUrl.indexOf(
-//         "https://certa-bucket-dev.s3.eu-central-1.amazonaws.com/"
-//       )
-//     ).not.toBe(-1);
-//   });
-// });
-//
+describe("uploadProfileImage", () => {
+  it("Should upload a profile image", async () => {
+    await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    const file = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/testfile.txt")
+    );
+
+    try {
+      await client.uploadProfileImage(file);
+    } catch (e) {
+      expect(false).toBe(true);
+    }
+
+    client.signOut();
+
+    const session = await client.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+    client.signOut();
+
+    if (session) {
+      expect(session.imageUrl).toBeTruthy();
+      expect(session.imageUrl.indexOf(process.env.CERTA_BUCKET_URL)).not.toBe(
+        -1
+      );
+    }
+  });
+});
 
 describe("deleteUser", () => {
   it("Should delete the current user", async () => {

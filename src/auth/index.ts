@@ -28,6 +28,7 @@ import {
   getUserProfile,
   saveUserProfile,
   updateUserProfile,
+  uploadUserProfileImage,
 } from "./api";
 import cache from "../util/cache";
 
@@ -154,6 +155,10 @@ export async function updateProfile({
 }) {
   await updateUserProfile({ fullName, companyName, emailNotifications });
   await updateCognitoProfile({ fullName, companyName, emailNotifications });
+}
+
+export async function uploadProfileImage(image: any) {
+  await uploadUserProfileImage(image);
 }
 
 export function signOut() {
