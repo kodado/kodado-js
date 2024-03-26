@@ -18,7 +18,7 @@ const client = await createClient({
     UserPoolId: process.env.USER_POOL_ID || "",
     ClientId: process.env.CLIENT_ID || "",
   },
-  endpoint: process.env.CERTA_URL || "",
+  endpoint: process.env.KODADO_URL || "",
 });
 
 beforeAll(async () => {
@@ -179,7 +179,7 @@ describe("uploadProfileImage", () => {
 
     if (session) {
       expect(session.imageUrl).toBeTruthy();
-      expect(session.imageUrl.indexOf(process.env.CERTA_BUCKET_URL)).not.toBe(
+      expect(session.imageUrl.indexOf(process.env.KODADO_BUCKET_URL)).not.toBe(
         -1
       );
     }
