@@ -48,6 +48,16 @@ export class GraphQLSchemaError extends Error {
   }
 }
 
+export class MissingQueryError extends Error {
+  constructor(...params: any) {
+    super(...params);
+
+    this.name = "MissingQueryError";
+    this.message = "Query is missing in payload";
+    Object.setPrototypeOf(this, MissingQueryError.prototype);
+  }
+}
+
 export class MissingItemError extends Error {
   constructor(...params: any) {
     super(...params);

@@ -1,7 +1,13 @@
 import { print } from "graphql";
 
 import { AuthClient } from "../auth/AuthClient";
-import { ForbiddenError, NotFoundError, UnexpectedError } from "../errors";
+import {
+  ForbiddenError,
+  GraphQLQueryError,
+  MissingQueryError,
+  NotFoundError,
+  UnexpectedError,
+} from "../errors";
 import { NotSignedInError } from "../errors/authErrors";
 import { decryptItem, encryptItem } from "./crypto";
 
@@ -245,6 +251,10 @@ export class ApiClient {
       throw new NotSignedInError();
     }
 
+    if (!qry.definitions || !qry.definitions.length) {
+      throw new MissingQueryError();
+    }
+
     const serverQuery = {
       ...qry,
       definitions: [
@@ -315,7 +325,6 @@ export class ApiClient {
             throw new ForbiddenError();
           case "BAD_USER_INPUT":
           case "GRAPHQL_VALIDATION_FAILED":
-            // @ts-ignore
             throw new GraphQLQueryError(
               // @ts-expect-error
               e.response?.data.errors[0].message || e.message

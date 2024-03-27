@@ -4,7 +4,7 @@ import gql from "graphql-tag";
 import { createClient } from "../src";
 import typeDefs from "./fixtures/schema";
 
-import { GraphQLQueryError } from "../src/errors";
+import { GraphQLQueryError, MissingQueryError } from "../src/errors";
 import { Credentials, recreateUser } from "./helpers/createUser";
 
 let id: string;
@@ -92,56 +92,58 @@ describe("createItem", () => {
     id = insertedTodo.id;
   });
 
-  // it("Should throw error if payload is missing", async () => {
-  //   const qry = gql`
-  //     mutation createTodo($item: String!) {
-  //       createItem(item: $item, type: "Todo") {
-  //         id
-  //         item {
-  //           text
-  //           done
-  //         }
-  //         createdAt
-  //       }
-  //     }
-  //   `;
+  it("Should throw error if payload is missing", async () => {
+    const qry = gql`
+      mutation createTodo($item: String!) {
+        createItem(item: $item, type: "Todo") {
+          id
+          item {
+            text
+            done
+          }
+          createdAt
+        }
+      }
+    `;
 
-  //   try {
-  //     await client.api.query(qry, {});
-  //   } catch (e) {
-  //     expect(e).toBeInstanceOf(GraphQLQueryError);
-  //   }
-  // });
+    try {
+      await client.api.query(qry, {});
+    } catch (e) {
+      expect(e).toBeInstanceOf(GraphQLQueryError);
+    }
+  });
 
-  // it("Should throw error if query is missing", async () => {
-  //   expect(
-  //     await client.api.query("", { item: { text: "Broken Todo", done: false } })
-  //   ).rejects.toMatchObject(
-  //     new TypeError("Cannot read properties of undefined (reading '0')")
-  //   );
-  // });
+  it("Should throw error if query is missing", async () => {
+    try {
+      await client.api.query("", {
+        item: { text: "Broken Todo", done: false },
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(MissingQueryError);
+    }
+  });
 
-  // it("Should throw error if query has undefined selections", async () => {
-  //   const qry = gql`
-  //     mutation createTodo($item: String!) {
-  //       createItem(item: $item, type: "Todo") {
-  //         id
-  //         thisDoesNotExist
-  //         item {
-  //           text
-  //           done
-  //         }
-  //         createdAt
-  //       }
-  //     }
-  //   `;
+  it("Should throw error if query has undefined selections", async () => {
+    const qry = gql`
+      mutation createTodo($item: String!) {
+        createItem(item: $item, type: "Todo") {
+          id
+          thisDoesNotExist
+          item {
+            text
+            done
+          }
+          createdAt
+        }
+      }
+    `;
 
-  //   try {
-  //     await client.api.query(qry, {
-  //       item: { text: "Broken query", done: false },
-  //     });
-  //   } catch (e) {
-  //     expect(e).toBeInstanceOf(GraphQLQueryError);
-  //   }
-  // });
+    try {
+      await client.api.query(qry, {
+        item: { text: "Broken query", done: false },
+      });
+    } catch (e) {
+      expect(e).toBeInstanceOf(GraphQLQueryError);
+    }
+  });
 });
