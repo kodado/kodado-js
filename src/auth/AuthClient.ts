@@ -24,7 +24,7 @@ type Keys = {
   signPublicKey: string;
 };
 
-type User = {
+export type User = {
   email: string;
   nickname: string;
   fullName: string;
@@ -34,7 +34,7 @@ type User = {
   userId: string;
   keys: Keys;
   mfaEnabled: boolean;
-  publicKeys: string[];
+  publicKeys: { username: string; publicKey: string }[];
   idToken: string;
 };
 
@@ -224,5 +224,22 @@ export class AuthClient {
     this.keys = null;
 
     return this.cognitoClient.deleteCognitoUser(user);
+  }
+
+  async getCurrentAuthorizationToken() {
+    let idToken = this.user?.idToken;
+
+    const user = this.cognitoClient.getCurrentUser();
+    if (user) {
+      const session = await this.cognitoClient.getCurrentSession(user);
+
+      if (!session) {
+        return;
+      }
+
+      idToken = session.getIdToken().getJwtToken();
+    }
+
+    return idToken;
   }
 }

@@ -1,8 +1,10 @@
+import { ApiClient } from "./api/ApiClient";
 import { AuthClient } from "./auth/AuthClient";
 import { initLocalGraphQLServer } from "./localServer";
 
 export class KodadoClient {
   auth: AuthClient;
+  api: ApiClient;
 
   constructor({
     typeDefs,
@@ -19,6 +21,7 @@ export class KodadoClient {
     endpoint: string;
   }) {
     this.auth = new AuthClient({ endpoint, userpool });
+    this.api = new ApiClient({ endpoint, auth: this.auth });
 
     initLocalGraphQLServer({
       resolvers: resolvers,

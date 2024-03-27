@@ -27,5 +27,9 @@ export async function query(item: any, query: ASTNode, type: string) {
     variableValues: { [type]: item },
   });
 
+  console.log(JSON.stringify(item));
+  console.log(adjustedQuery);
+  console.log(result);
+
   return { ...(result?.data?.[type] || {}) };
 }

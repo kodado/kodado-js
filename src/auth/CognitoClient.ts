@@ -150,6 +150,7 @@ export class CognitoClient {
       );
     });
   }
+
   signOutCognitoUser() {
     const userPool = new CognitoUserPool(this.userpool);
     const user: CognitoUser | null = userPool.getCurrentUser();
@@ -243,6 +244,21 @@ export class CognitoClient {
         if (err) reject(err);
 
         resolve(true);
+      });
+    });
+  }
+
+  getCurrentUser() {
+    const userPool = new CognitoUserPool(this.userpool);
+    return userPool.getCurrentUser();
+  }
+
+  async getCurrentSession(user: CognitoUser) {
+    return new Promise<CognitoUserSession>((resolve, reject) => {
+      user.getSession((err: any, session: CognitoUserSession) => {
+        if (err) reject(err);
+
+        resolve(session);
       });
     });
   }
