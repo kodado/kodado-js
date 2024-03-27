@@ -98,8 +98,6 @@ export class ApiClient {
         ? await decryptItem(items, query, this.auth.user)
         : undefined;
 
-      console.log(resolvedItem);
-
       if (items.users && items.users[0].username && items.users[0].publicKey) {
         for (const user of items.users) {
           this.addPublicKey(user);
@@ -294,7 +292,6 @@ export class ApiClient {
       });
 
       const result = await response.json();
-      console.log(this.auth.user);
 
       if (result.errors) throw new Error(result.errors[0].extensions.code);
 
