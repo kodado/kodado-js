@@ -29,6 +29,7 @@ type QueryVariables = {
   addUsers?: Array<User>;
   roles?: Array<Role>;
   referenceIds?: Array<string>;
+  sharedRoles?: Array<Role>;
   attach?: Boolean;
   referenceId?: String;
   isArchived?: Boolean;
@@ -224,7 +225,7 @@ export class ApiClient {
       qry.definitions[0].selectionSet.selections[0].name.value === "updateItem"
     ) {
       const response = await fetch(`${this.endpoint}/keys/${variables.id}`, {
-        method: "GET",
+        method: "POST",
         headers: { Authorization: idToken },
         body: JSON.stringify({
           removeUsers: variables.removeUsers,
@@ -237,8 +238,11 @@ export class ApiClient {
       const response = await fetch(
         `${this.endpoint}/keys/${variables.referenceIds[0]}`,
         {
-          method: "GET",
+          method: "POST",
           headers: { Authorization: idToken },
+          body: JSON.stringify({
+            roles: variables.sharedRoles,
+          }),
         }
       );
 
@@ -269,7 +273,7 @@ export class ApiClient {
     }
 
     let encKey = null;
-    let userKeys = null;
+    let userKeys = [];
     const sharedKeys = await this.getUserKeys(variables, qry, idToken);
 
     if (variables.item) {
