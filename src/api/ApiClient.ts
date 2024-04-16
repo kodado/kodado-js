@@ -10,6 +10,7 @@ import {
 } from "../errors";
 import { NotSignedInError } from "../errors/authErrors";
 import { decryptItem, encryptItem } from "./crypto";
+import * as sharing from "./sharing";
 
 type Role = {
   name: string;
@@ -46,6 +47,68 @@ export class ApiClient {
   constructor({ endpoint, auth }: { endpoint: string; auth: AuthClient }) {
     this.endpoint = endpoint;
     this.auth = auth;
+  }
+
+  async shareItem({
+    itemId,
+    user,
+    role,
+  }: {
+    itemId: string;
+    user: string;
+    role: string;
+  }) {
+    return sharing.shareItem({
+      itemId,
+      user,
+      role,
+      endpoint: this.endpoint,
+      token: (await this.auth.getCurrentAuthorizationToken()) || "",
+      privateKey: this.auth.user?.keys.encryptionSecretKey || "",
+      authUserPublicKey: this.auth.user?.keys.encryptionPublicKey || "",
+    });
+  }
+
+  async revokeItem({ itemId, user }: { itemId: string; user: string }) {
+    return sharing.revokeItem({
+      itemId,
+      user,
+      endpoint: this.endpoint,
+      token: (await this.auth.getCurrentAuthorizationToken()) || "",
+    });
+  }
+
+  async bulkRevokeItems({
+    itemIds,
+    user,
+  }: {
+    itemIds: string[];
+    user: string;
+  }) {
+    return sharing.bulkRevokeItems({
+      itemIds,
+      user,
+      endpoint: this.endpoint,
+      token: (await this.auth.getCurrentAuthorizationToken()) || "",
+    });
+  }
+
+  async updateRole({
+    itemId,
+    user,
+    role,
+  }: {
+    itemId: string;
+    user: string;
+    role: string;
+  }) {
+    return sharing.updateRole({
+      itemId,
+      user,
+      role,
+      endpoint: this.endpoint,
+      token: (await this.auth.getCurrentAuthorizationToken()) || "",
+    });
   }
 
   private createSelection(value: string) {
