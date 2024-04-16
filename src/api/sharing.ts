@@ -106,6 +106,7 @@ export async function bulkRevokeItems({
   token: string;
 }) {
   const response = await fetch(`${endpoint}/revoke/${user}`, {
+    method: "POST",
     headers: {
       Authorization: token,
     },
