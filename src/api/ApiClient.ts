@@ -141,7 +141,7 @@ export class ApiClient {
     return query;
   }
 
-  addPublicKey({
+  private addPublicKey({
     publicKey,
     username,
   }: {
@@ -159,7 +159,7 @@ export class ApiClient {
     }
   }
 
-  async deepDecode(items: any, query: any): Promise<any> {
+  private async deepDecode(items: any, query: any): Promise<any> {
     if (!this.auth.user) return;
     if (!items) return;
 
@@ -249,7 +249,11 @@ export class ApiClient {
     return items;
   }
 
-  async getUserKeys(variables: QueryVariables, qry: any, idToken: string) {
+  private async getUserKeys(
+    variables: QueryVariables,
+    qry: any,
+    idToken: string
+  ) {
     if (!this.auth.user) return;
 
     if (variables.users?.length) {
