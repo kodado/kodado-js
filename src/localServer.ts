@@ -1,5 +1,5 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
-import { graphql, print, ASTNode, GraphQLSchema } from "graphql";
+import { graphql, print, ASTNode, GraphQLSchema, Kind } from "graphql";
 
 let schema: GraphQLSchema;
 
@@ -16,7 +16,7 @@ export function initLocalGraphQLServer({
 export async function query(item: any, query: ASTNode, type: string) {
   let adjustedQuery = `
   {
-    ${print(query)}
+      ${print(query)}
   }`;
 
   adjustedQuery = adjustedQuery.replace("item", type);
@@ -24,7 +24,7 @@ export async function query(item: any, query: ASTNode, type: string) {
   const result = await graphql({
     schema,
     source: adjustedQuery,
-    variableValues: { [type]: item },
+    rootValue: { [type]: item },
   });
 
   return { ...(result?.data?.[type] || {}) };
