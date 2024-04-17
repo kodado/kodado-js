@@ -53,7 +53,7 @@ export function encryptItem(item: any, keys: any, user: User) {
   return { encryptedItem, encryptedKey, encryptedUserKeys: keys };
 }
 
-export async function decryptItem(item: any, query: any, user: User) {
+export async function decryptItem(item: any, user: User, query?: any) {
   try {
     const decryptedKey = decryptItemKey(
       item.key,
@@ -61,6 +61,11 @@ export async function decryptItem(item: any, query: any, user: User) {
       user.keys.encryptionSecretKey
     );
     const decoded = secretbox.decrypt(item.item, decryptedKey);
+
+    if (!query) {
+      return decoded;
+    }
+
     const subquery = query.selectionSet.selections.find(
       (subQ: any) => subQ.name.value === "item"
     );

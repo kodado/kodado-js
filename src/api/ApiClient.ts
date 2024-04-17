@@ -11,6 +11,7 @@ import {
 import { NotSignedInError } from "../errors/authErrors";
 import { decryptItem, encryptItem } from "./crypto";
 import * as sharing from "./sharing";
+import * as bulkCreate from "./bulkCreate";
 
 type Role = {
   name: string;
@@ -111,6 +112,26 @@ export class ApiClient {
     });
   }
 
+  async bulkCreateItems<T>({
+    items,
+    type,
+  }: {
+    items: any[];
+    type: string;
+  }): Promise<T[]> {
+    if (!this.auth.user) {
+      throw new NotSignedInError();
+    }
+
+    return bulkCreate.bulkCreateItems<T>({
+      items,
+      type,
+      user: this.auth.user,
+      token: (await this.auth.getCurrentAuthorizationToken()) || "",
+      endpoint: this.endpoint,
+    });
+  }
+
   private createSelection(value: string) {
     return {
       kind: "Field",
@@ -165,7 +186,7 @@ export class ApiClient {
 
     if (!Array.isArray(items)) {
       const resolvedItem = items.item
-        ? await decryptItem(items, query, this.auth.user)
+        ? await decryptItem(items, this.auth.user, query)
         : undefined;
 
       if (items.users && items.users[0].username && items.users[0].publicKey) {
@@ -208,7 +229,7 @@ export class ApiClient {
       }
 
       const resolvedItem = items[i].item
-        ? await decryptItem(items[i], query, this.auth.user)
+        ? await decryptItem(items[i], this.auth.user, query)
         : undefined;
       const subqueries = query.selectionSet.selections.filter(
         (subQ: any) =>
