@@ -30,7 +30,7 @@ type QueryVariables = {
   addUsers?: Array<User>;
   roles?: Array<Role>;
   referenceIds?: Array<string>;
-  sharedRoles?: Array<Role>;
+  sharedRoles?: Array<string>;
   attach?: Boolean;
   referenceId?: String;
   isArchived?: Boolean;

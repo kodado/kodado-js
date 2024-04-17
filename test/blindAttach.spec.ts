@@ -279,7 +279,7 @@ describe("share after attach", () => {
     `;
 
     try {
-      const todos = await client.api.query<{ id: string }>(qry, {});
+      const todos = await client.api.query<{ id: string }[]>(qry, {});
       client.auth.signOut();
       expect(todos[0].id).toBe(id);
     } catch (e) {
