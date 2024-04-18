@@ -262,4 +262,52 @@ export class CognitoClient {
       });
     });
   }
+
+  async updatePassword({
+    oldPassword,
+    newPassword,
+  }: {
+    oldPassword: string;
+    newPassword: string;
+  }) {
+    return new Promise(async (resolve, reject) => {
+      const user: CognitoUser | null = this.getCurrentUser();
+
+      if (!user) return reject("Not signed in");
+
+      const session = await this.getCurrentSession(user);
+
+      if (!session) return reject("Not signed in");
+      user.setSignInUserSession(session);
+
+      user.changePassword(oldPassword, newPassword, (err: any, result: any) => {
+        if (err) reject(err);
+
+        resolve(result);
+      });
+    });
+  }
+
+  async updateUserPrivateKeys(encryptedPrivateKeys: string) {
+    return new Promise(async (resolve, reject) => {
+      const user: CognitoUser | null = this.getCurrentUser();
+
+      if (!user) return reject("Not signed in");
+
+      const session = await this.getCurrentSession(user);
+
+      if (!session) return reject("Not signed in");
+
+      const attribute = new CognitoUserAttribute({
+        Name: "custom:encryptedPrivateKeys",
+        Value: encryptedPrivateKeys,
+      });
+
+      user.updateAttributes([attribute], (err: any, result: any) => {
+        if (err) return reject(err);
+
+        return resolve(result);
+      });
+    });
+  }
 }
