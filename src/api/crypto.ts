@@ -76,3 +76,30 @@ export async function decryptItem(item: any, user: User, query?: any) {
     return undefined;
   }
 }
+
+export function encryptFile(
+  file: Buffer | Uint8Array,
+  item: any,
+  keys: any,
+  publicKey: string,
+  privateKey: string
+) {
+  const key = secretbox.generateKey();
+  const encryptedFile = secretbox.encryptFile(file, key);
+  const encryptedItem = secretbox.encrypt(item, key);
+
+  const encryptedKey = encryptItemKey(key, publicKey, privateKey);
+
+  if (keys) {
+    for (let i = 0; i < keys.length; i++) {
+      keys[i].itemKey = encryptItemKey(key, keys[i].publicKey, privateKey);
+    }
+  }
+
+  return {
+    encryptedFile,
+    encryptedItem,
+    encryptedKey,
+    encryptedUserKeys: keys,
+  };
+}

@@ -57,12 +57,11 @@ export const decrypt = (messageWithNonce: string, key: string) => {
   return JSON.parse(base64DecryptedMessage);
 };
 
-export const decryptFile = (messageWithNonce: string, key: string) => {
+export const decryptFile = (messageWithNonce: Uint8Array, key: string) => {
   const keyUint8Array = decodeBase64(key);
 
-  const messageWithNonceAsUint8Array = decodeBase64(messageWithNonce);
-  const nonce = messageWithNonceAsUint8Array.slice(0, secretbox.nonceLength);
-  const message = messageWithNonceAsUint8Array.slice(
+  const nonce = messageWithNonce.slice(0, secretbox.nonceLength);
+  const message = messageWithNonce.slice(
     secretbox.nonceLength,
     messageWithNonce.length
   );
