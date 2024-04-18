@@ -5,6 +5,7 @@ import {
   UsernameAlreadyExistsError,
   EmailAndPasswordRequiredError,
   AlreadySignedInError,
+  NotSignedInError,
 } from "../errors/authErrors";
 
 import {
@@ -16,6 +17,7 @@ import {
 
 import { CognitoClient } from "./CognitoClient";
 import { AuthApiClient } from "./AuthApiClient";
+import { decryptItemKey, encryptItemKey } from "../api/crypto";
 
 type Keys = {
   encryptionSecretKey: string;
@@ -241,5 +243,76 @@ export class AuthClient {
     }
 
     return idToken;
+  }
+
+  async updatePassword({
+    oldPassword,
+    newPassword,
+  }: {
+    oldPassword: string;
+    newPassword: string;
+  }): Promise<{
+    encryptionPublicKey: string;
+    encryptionSecretKey: string;
+  }> {
+    if (!this.user || !this.session) throw new NotSignedInError();
+
+    await this.cognitoClient.updatePassword({
+      oldPassword,
+      newPassword,
+    });
+
+    const keys = await this.apiClient.getUserKeys();
+
+    const decryptedItemKeys = keys.map((key: any) => ({
+      ...key,
+      decryptedKey: decryptItemKey(
+        key.key,
+        key.publicKey,
+        this.user?.keys.encryptionSecretKey || ""
+      ),
+    }));
+
+    const newKeys = generateKeys();
+
+    this.user.keys.encryptionPublicKey = encodeBase64(
+      newKeys.encryptionPublicKey
+    );
+    this.user.keys.encryptionSecretKey = encodeBase64(
+      newKeys.encryptionSecretKey
+    );
+
+    // We have to map each property because we do not want the decrypted key in the database
+    const encryptedItemKeys = decryptedItemKeys.map((key: any) => ({
+      itemId: key.itemId,
+      publicKey: this.user?.keys.encryptionPublicKey,
+      role: key.role,
+      userId: key.userId,
+      key: encryptItemKey(
+        key.decryptedKey,
+        this.user?.keys.encryptionPublicKey || "",
+        this.user?.keys.encryptionSecretKey || ""
+      ),
+    }));
+
+    const encryptedPrivateKeys: string = encryptPrivateKeys(
+      {
+        encryptionSecretKey: newKeys.encryptionSecretKey,
+        signSecretKey: newKeys.signSecretKey,
+      },
+      newPassword
+    );
+
+    await this.cognitoClient.updateUserPrivateKeys(encryptedPrivateKeys);
+
+    await this.apiClient.updateItemKeys(
+      encodeBase64(newKeys.encryptionPublicKey),
+      encryptedItemKeys
+    );
+
+    return {
+      encryptionPublicKey: this.user.keys.encryptionPublicKey,
+      encryptionSecretKey: this.user.keys.encryptionSecretKey,
+    };
   }
 }

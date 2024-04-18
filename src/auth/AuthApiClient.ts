@@ -100,4 +100,29 @@ export class AuthApiClient {
       console.log(e);
     }
   }
+
+  async getUserKeys() {
+    const response = await fetch(`${this.endpoint}/keys/user`, {
+      method: "POST",
+      headers: {
+        Authorization: this.session?.getIdToken().getJwtToken() || "",
+      },
+    });
+
+    return response.json();
+  }
+
+  async updateItemKeys(encryptionPublicKey: string, encryptedItemKeys: any) {
+    await fetch(`${this.endpoint}/auth/password`, {
+      method: "POST",
+
+      headers: {
+        Authorization: this.session?.getIdToken().getJwtToken() || "",
+      },
+      body: JSON.stringify({
+        encryptionPublicKey,
+        encryptedItemKeys,
+      }),
+    });
+  }
 }
