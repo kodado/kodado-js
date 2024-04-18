@@ -6,7 +6,9 @@ import {
   GraphQLQueryError,
   MissingQueryError,
   NotFoundError,
+  RoleDoesNotExistError,
   UnexpectedError,
+  UserNotSharedError,
 } from "../errors";
 import { NotSignedInError } from "../errors/authErrors";
 import { decryptItem, encryptItem } from "./crypto";
@@ -130,6 +132,45 @@ export class ApiClient {
       token: (await this.auth.getCurrentAuthorizationToken()) || "",
       endpoint: this.endpoint,
     });
+  }
+
+  async transferOwnership({
+    itemId,
+    user,
+    role,
+  }: {
+    itemId: string;
+    user: string;
+    role: string;
+  }) {
+    const response = await fetch(`${this.endpoint}/transfer/${itemId}`, {
+      method: "POST",
+
+      headers: {
+        Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
+      },
+      body: JSON.stringify({
+        user,
+        role,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.status === 403) {
+      throw new ForbiddenError();
+    }
+    if (response.status === 404) {
+      throw new NotFoundError();
+    }
+    if (response.status === 400 && data === "User not shared") {
+      throw new UserNotSharedError();
+    }
+    if (response.status === 400 && data === "Role not found") {
+      throw new RoleDoesNotExistError();
+    }
+    if (response.status !== 200) {
+      throw new UnexpectedError();
+    }
   }
 
   private createSelection(value: string) {
