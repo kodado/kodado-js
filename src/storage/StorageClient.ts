@@ -1,20 +1,7 @@
-import { encodeBase64 } from "tweetnacl-util";
-
 import { AuthClient } from "../auth/AuthClient";
 import { decryptItemKey, encryptFile } from "../api/crypto";
-import { FileNotFoundError, UnexpectedError } from "../errors";
+import { FileNotFoundError } from "../errors";
 import * as secretbox from "../crypto/secretbox";
-
-async function getBase64(file: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () =>
-      // @ts-ignore
-      resolve(reader.result.replace(/data:.*;base64,/, ""));
-    reader.onerror = (error) => reject(error);
-  });
-}
 
 export class StorageClient {
   private endpoint: string;
@@ -41,14 +28,7 @@ export class StorageClient {
       method: "GET",
     });
 
-    const readable = await res.body?.getReader().read();
-
-    if (!readable) throw new UnexpectedError();
-
-    const base64File =
-      typeof window === "undefined"
-        ? encodeBase64(readable.value)
-        : await getBase64(readable.value);
+    const readable = await res.arrayBuffer();
 
     const decryptedKey = decryptItemKey(
       data.key.key,
@@ -56,7 +36,10 @@ export class StorageClient {
       this.auth.user?.keys.encryptionSecretKey || ""
     );
 
-    const decryptedFile = secretbox.decryptFile(base64File, decryptedKey);
+    const decryptedFile = secretbox.decryptFile(
+      new Uint8Array(readable),
+      decryptedKey
+    );
 
     return decryptedFile;
   }
