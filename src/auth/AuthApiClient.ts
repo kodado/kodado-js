@@ -33,15 +33,11 @@ export class AuthApiClient {
   }
 
   async saveUserProfile(data: ProfileAttributes) {
-    try {
-      await fetch(`${this.endpoint}/auth/signup`, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
-    } catch (e) {
-      console.log(e);
-    }
+    await fetch(`${this.endpoint}/auth/signup`, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   async updateUserProfile({
@@ -53,52 +49,40 @@ export class AuthApiClient {
     companyName?: string;
     emailNotifications?: string;
   }) {
-    try {
-      await fetch(`${this.endpoint}/auth/profile`, {
-        method: "PUT",
-        body: JSON.stringify({ fullName, companyName, emailNotifications }),
-        headers: {
-          Authorization: this.session?.getIdToken().getJwtToken() || "",
-        },
-      });
-    } catch (e) {
-      console.log(e);
-    }
+    await fetch(`${this.endpoint}/auth/profile`, {
+      method: "PUT",
+      body: JSON.stringify({ fullName, companyName, emailNotifications }),
+      headers: {
+        Authorization: this.session?.getIdToken().getJwtToken() || "",
+      },
+    });
   }
 
   async deleteUserProfile() {
-    try {
-      await fetch(`${this.endpoint}/auth`, {
-        method: "DELETE",
-        headers: {
-          Authorization: this.session?.getIdToken().getJwtToken() || "",
-        },
-      });
-    } catch (e) {
-      console.log(e);
-    }
+    await fetch(`${this.endpoint}/auth`, {
+      method: "DELETE",
+      headers: {
+        Authorization: this.session?.getIdToken().getJwtToken() || "",
+      },
+    });
   }
 
   async uploadUserProfileImage(image: any) {
-    try {
-      const response = await fetch(`${this.endpoint}/auth/profile/image`, {
-        method: "POST",
-        headers: {
-          Authorization: this.session?.getIdToken().getJwtToken() || "",
-        },
-      });
+    const response = await fetch(`${this.endpoint}/auth/profile/image`, {
+      method: "POST",
+      headers: {
+        Authorization: this.session?.getIdToken().getJwtToken() || "",
+      },
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      await fetch(data.url, {
-        method: "PUT",
-        body: image,
-      });
+    await fetch(data.url, {
+      method: "PUT",
+      body: image,
+    });
 
-      return data;
-    } catch (e) {
-      console.log(e);
-    }
+    return data;
   }
 
   async getUserKeys() {

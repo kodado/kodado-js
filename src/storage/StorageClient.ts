@@ -55,52 +55,47 @@ export class StorageClient {
     name: string;
     mimeType: string;
   }) {
-    try {
-      const response = await fetch(`${this.endpoint}/keys/${itemId}`, {
-        method: "POST",
-        headers: {
-          Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
-        },
-        body: JSON.stringify({}),
-      });
+    const response = await fetch(`${this.endpoint}/keys/${itemId}`, {
+      method: "POST",
+      headers: {
+        Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
+      },
+      body: JSON.stringify({}),
+    });
 
-      const keys = await response.json();
-      const encryptedFile = encryptFile(
-        file,
-        { name, mimeType },
-        keys,
-        this.auth.user?.keys.encryptionPublicKey || "",
-        this.auth.user?.keys.encryptionSecretKey || ""
-      );
+    const keys = await response.json();
+    const encryptedFile = encryptFile(
+      file,
+      { name, mimeType },
+      keys,
+      this.auth.user?.keys.encryptionPublicKey || "",
+      this.auth.user?.keys.encryptionSecretKey || ""
+    );
 
-      const payload = {
-        itemId,
-        item: encryptedFile.encryptedItem,
-        keys: encryptedFile.encryptedUserKeys,
-        key: encryptedFile.encryptedKey,
-        publicKey: this.auth.user?.keys.encryptionPublicKey,
-      };
+    const payload = {
+      itemId,
+      item: encryptedFile.encryptedItem,
+      keys: encryptedFile.encryptedUserKeys,
+      key: encryptedFile.encryptedKey,
+      publicKey: this.auth.user?.keys.encryptionPublicKey,
+    };
 
-      const fileResponse = await fetch(`${this.endpoint}/file`, {
-        method: "POST",
-        headers: {
-          Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
-        },
-        body: JSON.stringify(payload),
-      });
+    const fileResponse = await fetch(`${this.endpoint}/file`, {
+      method: "POST",
+      headers: {
+        Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
+      },
+      body: JSON.stringify(payload),
+    });
 
-      const data = await fileResponse.json();
+    const data = await fileResponse.json();
 
-      await fetch(data.url, {
-        method: "PUT",
-        body: encryptedFile.encryptedFile,
-      });
+    await fetch(data.url, {
+      method: "PUT",
+      body: encryptedFile.encryptedFile,
+    });
 
-      return data.key as string;
-    } catch (e) {
-      // @ts-ignore
-      console.log(e);
-    }
+    return data.key as string;
   }
 
   async delete(fileId: string) {

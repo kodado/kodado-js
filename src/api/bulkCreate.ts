@@ -100,51 +100,49 @@ export async function bulkCreateItems<T>({
   token: string;
   endpoint: string;
 }): Promise<T[]> {
-  try {
-    const encryptedItems = await Promise.all(
-      items.map(async (item: Item) => {
-        const sharedKeys = await getUserKeys(item, user, token, endpoint);
+  const encryptedItems = await Promise.all(
+    items.map(async (item: Item) => {
+      const sharedKeys = await getUserKeys(item, user, token, endpoint);
 
-        const { encryptedItem, encryptedKey, encryptedUserKeys } = encryptItem(
-          item.item,
-          sharedKeys,
-          user
-        );
+      const { encryptedItem, encryptedKey, encryptedUserKeys } = encryptItem(
+        item.item,
+        sharedKeys,
+        user
+      );
 
-        return {
-          ...item,
-          item: encryptedItem,
-          key: encryptedKey,
-          userKeys: encryptedUserKeys,
-          publicKey: user.keys.encryptionPublicKey,
-        };
-      })
-    );
+      return {
+        ...item,
+        item: encryptedItem,
+        key: encryptedKey,
+        userKeys: encryptedUserKeys,
+        publicKey: user.keys.encryptionPublicKey,
+      };
+    })
+  );
 
-    const response = await fetch(`${endpoint}/create`, {
-      method: "POST",
-      headers: {
-        Authorization: token,
-      },
+  const response = await fetch(`${endpoint}/create`, {
+    method: "POST",
+    headers: {
+      Authorization: token,
+    },
 
-      body: JSON.stringify({
-        items: encryptedItems,
-        itemType: type,
-      }),
-    });
+    body: JSON.stringify({
+      items: encryptedItems,
+      itemType: type,
+    }),
+  });
 
-    const insertedItems = await response.json();
-
-    for (let i = 0; i < insertedItems.length; i++) {
-      insertedItems[i].item = await decryptItem(insertedItems[i], user);
-    }
-
-    return insertedItems;
-  } catch (e: any) {
-    if (e.response.status === 403) {
-      throw new ForbiddenError();
-    } else {
-      throw new UnexpectedError(e.message);
-    }
+  if (response.status === 403) {
+    throw new ForbiddenError();
+  } else if (response.status !== 200) {
+    throw new UnexpectedError(await response.json());
   }
+
+  const insertedItems = await response.json();
+
+  for (let i = 0; i < insertedItems.length; i++) {
+    insertedItems[i].item = await decryptItem(insertedItems[i], user);
+  }
+
+  return insertedItems;
 }
