@@ -286,59 +286,51 @@ export class GraphQLClient {
       userKeys = encryptedUserKeys;
     }
 
-    try {
-      const response = await fetch(`${this.endpoint}/graphql`, {
-        method: "POST",
-        body: JSON.stringify({
-          query: print(serverQuery),
-          variables,
-          key: encKey,
-          userKeys,
-          roles: variables.roles,
-          publicKey: this.auth.user.keys.encryptionPublicKey,
-        }),
-        headers: {
-          Authorization: idToken || "",
-          "Content-Type": "application/json",
-        },
-      });
+    const response = await fetch(`${this.endpoint}/graphql`, {
+      method: "POST",
+      body: JSON.stringify({
+        query: print(serverQuery),
+        variables,
+        key: encKey,
+        userKeys,
+        roles: variables.roles,
+        publicKey: this.auth.user.keys.encryptionPublicKey,
+      }),
+      headers: {
+        Authorization: idToken || "",
+        "Content-Type": "application/json",
+      },
+    });
 
-      const result = await response.json();
-
-      if (result.errors) throw new Error(result.errors[0].extensions.code);
-
-      return await this.deepDecode(
-        result.data[qry.definitions[0].selectionSet.selections[0].name.value],
-        qry.definitions[0].selectionSet.selections[0]
-      );
-    } catch (e) {
-      if (e instanceof Error) {
-        // @ts-ignore
-        if (e.response)
-          // @ts-expect-error
-          e.message = e.response.data.errors?.[0]?.extensions?.code;
-
-        switch (e.message) {
-          case "NOT_FOUND":
-          case "NOT_FOUND_ERROR":
-          case "NOT_FOUND":
-            throw new NotFoundError();
-          case "FORBIDDEN":
-            throw new ForbiddenError();
-          case "BAD_USER_INPUT":
-          case "GRAPHQL_VALIDATION_FAILED":
-            throw new GraphQLQueryError(
-              // @ts-expect-error
-              e.response?.data.errors[0].message || e.message
-            );
-          default:
-            console.log(e);
-            //@ts-ignore
-            console.log(e.response?.data?.errors);
-            throw new UnexpectedError();
-        }
-      }
+    if (response.status === 401) {
+      throw new NotSignedInError();
     }
-    return {} as T;
+    if (response.status === 500) {
+      throw new UnexpectedError();
+    }
+
+    const result = await response.json();
+
+    if (result.errors) {
+      if (result.errors[0].message === "Item not found.") {
+        throw new NotFoundError("Item not found.");
+      }
+      if (result.errors[0].extensions.code === "FORBIDDEN") {
+        throw new ForbiddenError();
+      }
+      if (
+        result.errors[0].extensions.code === "BAD_USER_INPUT" ||
+        result.errors[0].extensions.code === "GRAPHQL_VALIDATION_FAILED"
+      ) {
+        throw new GraphQLQueryError("Bad request");
+      }
+
+      throw new UnexpectedError(result.errors[0].message);
+    }
+
+    return await this.deepDecode(
+      result.data[qry.definitions[0].selectionSet.selections[0].name.value],
+      qry.definitions[0].selectionSet.selections[0]
+    );
   }
 }
