@@ -205,11 +205,10 @@ export class GraphQLClient {
 
       const response = await fetch(`${this.endpoint}/keys`, {
         method: "POST",
-        body: JSON.stringify({ users: variables.users }),
         headers: {
           Authorization: idToken,
-          "Content-Type": "application/json",
         },
+        body: JSON.stringify({ users: variables.users }),
       });
       const keys = await response.json();
 
@@ -218,7 +217,9 @@ export class GraphQLClient {
         role: variables.users?.find((usr: any) => usr.username === key.username)
           ?.role,
       }));
-    } else if (
+    }
+
+    if (
       variables.id &&
       qry.definitions[0].selectionSet.selections[0].name.value === "updateItem"
     ) {
@@ -232,7 +233,9 @@ export class GraphQLClient {
       });
 
       return response.json();
-    } else if (variables.referenceIds && variables.referenceIds.length === 1) {
+    }
+
+    if (variables.referenceIds && variables.referenceIds.length === 1) {
       const response = await fetch(
         `${this.endpoint}/keys/${variables.referenceIds[0]}`,
         {
