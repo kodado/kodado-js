@@ -90,7 +90,3 @@ Contributions, issues and feature requests are welcome. Feel free to check out t
 MIT
 
 Copyright (c) 2024-present, Kodado
-
-```
-
-```
