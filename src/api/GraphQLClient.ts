@@ -229,6 +229,22 @@ export class GraphQLClient {
     return response.json();
   }
 
+  private async getKeysByReferenceId(
+    referenceId: string,
+    sharedRoles: string[],
+    idToken: string
+  ) {
+    const response = await fetch(`${this.endpoint}/keys/${referenceId}`, {
+      method: "POST",
+      headers: { Authorization: idToken },
+      body: JSON.stringify({
+        roles: sharedRoles,
+      }),
+    });
+
+    return response.json();
+  }
+
   private async getUserKeys(
     variables: QueryVariables,
     qry: any,
@@ -253,18 +269,11 @@ export class GraphQLClient {
     }
 
     if (variables.referenceIds && variables.referenceIds.length === 1) {
-      const response = await fetch(
-        `${this.endpoint}/keys/${variables.referenceIds[0]}`,
-        {
-          method: "POST",
-          headers: { Authorization: idToken },
-          body: JSON.stringify({
-            roles: variables.sharedRoles,
-          }),
-        }
+      return this.getKeysByReferenceId(
+        variables.referenceIds[0],
+        variables.sharedRoles || [],
+        idToken
       );
-
-      return response.json();
     }
   }
 
