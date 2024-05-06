@@ -22,21 +22,21 @@ type Role = {
 type User = { username: string; role: string };
 
 export type QueryVariables = {
-  id?: String;
-  item?: Object;
-  users?: Array<User>;
-  removeUsers?: Array<string>;
-  addUsers?: Array<User>;
-  roles?: Array<Role>;
-  referenceIds?: Array<string>;
-  sharedRoles?: Array<string>;
-  attach?: Boolean;
-  referenceId?: String;
-  isArchived?: Boolean;
-  onCreate?: String;
-  onUpdate?: String;
-  onReference?: String;
-  onDelete?: String;
+  id?: string;
+  item?: object | string;
+  users?: User[];
+  removeUsers?: string[];
+  addUsers?: User[];
+  roles?: Role[];
+  referenceIds?: string[];
+  sharedRoles?: string[];
+  attach?: boolean;
+  referenceId?: string;
+  isArchived?: boolean;
+  onCreate?: string;
+  onUpdate?: string;
+  onReference?: string;
+  onDelete?: string;
 };
 
 export class GraphQLClient {
@@ -211,6 +211,24 @@ export class GraphQLClient {
     }));
   }
 
+  private async getKeysByItem(
+    id: string,
+    addUsers: User[],
+    removeUsers: string[],
+    idToken: string
+  ) {
+    const response = await fetch(`${this.endpoint}/keys/${id}`, {
+      method: "POST",
+      headers: { Authorization: idToken },
+      body: JSON.stringify({
+        removeUsers: removeUsers,
+        addUsers: addUsers,
+      }),
+    });
+
+    return response.json();
+  }
+
   private async getUserKeys(
     variables: QueryVariables,
     qry: any,
@@ -226,16 +244,12 @@ export class GraphQLClient {
       variables.id &&
       qry.definitions[0].selectionSet.selections[0].name.value === "updateItem"
     ) {
-      const response = await fetch(`${this.endpoint}/keys/${variables.id}`, {
-        method: "POST",
-        headers: { Authorization: idToken },
-        body: JSON.stringify({
-          removeUsers: variables.removeUsers,
-          addUsers: variables.addUsers,
-        }),
-      });
-
-      return response.json();
+      return this.getKeysByItem(
+        variables.id,
+        variables.addUsers || [],
+        variables.removeUsers || [],
+        idToken
+      );
     }
 
     if (variables.referenceIds && variables.referenceIds.length === 1) {
