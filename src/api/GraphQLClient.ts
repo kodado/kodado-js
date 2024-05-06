@@ -180,6 +180,37 @@ export class GraphQLClient {
     return items;
   }
 
+  private async getKeysByUsers(users: User[], idToken: string) {
+    const publicKeys = this.auth.user?.publicKeys;
+
+    if (!publicKeys) return [];
+
+    const localKeys = publicKeys.filter((key) =>
+      users.some((usr) => usr.username === key.username)
+    );
+
+    if (localKeys.length === users.length) {
+      return localKeys.map((key: any) => ({
+        ...key,
+        role: users.find((usr: any) => usr.username === key.username)?.role,
+      }));
+    }
+
+    const response = await fetch(`${this.endpoint}/keys`, {
+      method: "POST",
+      headers: {
+        Authorization: idToken,
+      },
+      body: JSON.stringify({ users }),
+    });
+    const keys = await response.json();
+
+    return keys.map((key: any) => ({
+      ...key,
+      role: users.find((usr: any) => usr.username === key.username)?.role,
+    }));
+  }
+
   private async getUserKeys(
     variables: QueryVariables,
     qry: any,
@@ -188,35 +219,7 @@ export class GraphQLClient {
     if (!this.auth.user) return;
 
     if (variables.users?.length) {
-      const publicKeys = this.auth.user.publicKeys;
-
-      const localKeys = publicKeys.filter((key) =>
-        variables.users?.some((usr) => usr.username === key.username)
-      );
-
-      if (localKeys.length === variables.users?.length) {
-        return localKeys.map((key: any) => ({
-          ...key,
-          role: variables.users?.find(
-            (usr: any) => usr.username === key.username
-          )?.role,
-        }));
-      }
-
-      const response = await fetch(`${this.endpoint}/keys`, {
-        method: "POST",
-        headers: {
-          Authorization: idToken,
-        },
-        body: JSON.stringify({ users: variables.users }),
-      });
-      const keys = await response.json();
-
-      return keys.map((key: any) => ({
-        ...key,
-        role: variables.users?.find((usr: any) => usr.username === key.username)
-          ?.role,
-      }));
+      return this.getKeysByUsers(variables.users, idToken);
     }
 
     if (
