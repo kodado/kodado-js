@@ -230,7 +230,7 @@ export class AuthClient {
     this.session = null;
     this.keys = null;
 
-    return this.cognitoClient.deleteCognitoUser(user);
+    await this.cognitoClient.deleteCognitoUser(user);
   }
 
   async getCurrentAuthorizationToken() {
