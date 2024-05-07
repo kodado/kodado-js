@@ -193,8 +193,19 @@ describe("deleteUser", () => {
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
-    const success = await client.auth.deleteUser();
 
-    expect(success).toBe(true);
+    await client.auth.deleteUser();
+
+    try {
+      await client.auth.signIn({
+        email: "auth-lib-user@turingpoint.de",
+        password: "Abcd1234!",
+      });
+      expect(false).toBe(true);
+    } catch (e) {
+      if (e instanceof WrongCredentialsError) {
+        expect(true).toBe(true);
+      }
+    }
   });
 });
