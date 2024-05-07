@@ -6,6 +6,7 @@ import {
   EmailAndPasswordRequiredError,
   AlreadySignedInError,
   NotSignedInError,
+  WrongCredentialsError,
 } from "../errors/authErrors";
 
 import {
@@ -72,7 +73,7 @@ export class AuthClient {
     });
 
     if (!session) {
-      return;
+      throw new WrongCredentialsError();
     }
 
     if (session instanceof CognitoUserSession) {
@@ -120,6 +121,10 @@ export class AuthClient {
         idToken: session.getIdToken().getJwtToken(),
         publicKeys: [],
       };
+    }
+
+    if (!this.user) {
+      throw new WrongCredentialsError();
     }
 
     return this.user;
