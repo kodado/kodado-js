@@ -128,7 +128,9 @@ describe("bulkRevoke", () => {
         id: ids[0],
       });
     } catch (e) {
-      expect(e.message).toBe("Item not found.");
+      if (e instanceof Error) {
+        expect(e.message).toBe("Item not found.");
+      }
     }
     client.auth.signOut();
   });
