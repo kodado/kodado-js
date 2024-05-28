@@ -4,6 +4,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: "kodado",
   description: "A VitePress Site",
+  base: '/kodado-js/',
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
