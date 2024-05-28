@@ -6,16 +6,24 @@
   "description": "",
   "scripts": {
     "build": "bun run build.mjs",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
   },
-  "files": ["dist"],
-  "keywords": ["bun"],
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "bun"
+  ],
   "devDependencies": {
     "@types/bun": "^1.0.0",
     "@types/web": "^0.0.143",
     "bun-plugin-dts": "^0.2.1",
     "graphql-tag": "^2.12.6",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitepress": "^1.2.2"
   },
   "dependencies": {
     "@graphql-tools/schema": "^10.0.3",
