@@ -6,7 +6,7 @@ Kodado is an end to end encrypted app development framework that allows you to b
 
 ### Installation
 
-You can install Kodado using your prefered package manager.
+You can install Kodado using your preferred package manager.
 
 ```bash
 npm install @kodado/kodado-js
