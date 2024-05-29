@@ -17,7 +17,6 @@ export default defineConfig({
       {text: 'Authentication', items: [
         { text: "Introduction", link: '/authentication-intro' },
         { text: 'Authenticating', link: '/authenticating' },
-        { text: 'MFA', link: '/mfa' },
       ]},
       {text: 'Items', items: [
         { text: 'Introduction', link: '/items' },
@@ -26,10 +25,11 @@ export default defineConfig({
         { text: 'Updating', link: '/updating' },
         { text: 'Deleting', link: '/deleting' },
       ]},
-      {text: 'Permissions',
+      {text: 'Sharing',
         items: [
-          { text: 'Introduction', link: '/permissions' },
-          { text: 'Sharing Items', link: '/defining' },
+          { text: 'Introduction', link: '/sharing-intro' },
+          { text: 'Sharing Items', link: '/sharing' },
+          { text: 'Revoking Access', link: '/revoking' },
         ]
       },
       {text: 'Files',
