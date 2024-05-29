@@ -34,7 +34,7 @@ export default defineConfig({
       },
       {text: 'Files',
         items: [
-          { text: 'Introduction', link: '/files' },
+          { text: 'Introduction', link: '/files-intro' },
           { text: 'Uploading', link: '/uploading' },
           { text: 'Downloading', link: '/downloading' },
         ]
