@@ -1,3 +1,7 @@
+---
+outline: deep
+---
+
 # Introduction to Items in `kodado-js`
 
 ## Overview
