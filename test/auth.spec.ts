@@ -11,7 +11,7 @@ import {
 } from "../src/errors/authErrors";
 import { safelyDeleteUser } from "./helpers/createUser";
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {

@@ -62,6 +62,56 @@ export class AuthClient {
     this.user = null;
   }
 
+  async initFromLocalStorage() {
+    const encryptionSecretKey = localStorage.getItem("encKey") || "";
+    const encryptionPublicKey = localStorage.getItem("encPubKey") || "";
+    const signSecretKey = localStorage.getItem("signKey") || "";
+    const signPublicKey = localStorage.getItem("signPubKey") || "";
+
+    this.keys = {
+      encryptionSecretKey,
+      encryptionPublicKey,
+      signSecretKey,
+      signPublicKey,
+    };
+
+    const user = this.cognitoClient.getCurrentUser();
+    if (!user) return;
+
+    const session = await this.cognitoClient.getCurrentSession(user);
+    user.setSignInUserSession(session);
+
+    this.session = session;
+    const idToken = session.getIdToken();
+
+    const profile = await this.apiClient.getUserProfile(
+      idToken.payload.nickname,
+      this.session.getIdToken().getJwtToken()
+    );
+
+    this.user = {
+      email: profile.email,
+      nickname: idToken.payload.nickname,
+      fullName: idToken.payload.name,
+      imageUrl: profile.imageUrl,
+      companyName: idToken.payload["custom:companyName"],
+      emailNotifications: idToken.payload["custom:emailNotifications"]
+        ? JSON.parse(idToken.payload["custom:emailNotifications"])
+        : {},
+      userId: idToken.payload.sub,
+      keys: {
+        encryptionSecretKey,
+        encryptionPublicKey,
+        signSecretKey,
+        signPublicKey,
+      },
+      // TODO: implement
+      mfaEnabled: false,
+      idToken: idToken.getJwtToken(),
+      publicKeys: [],
+    };
+  }
+
   async signIn({ email, password }: { email: string; password: string }) {
     if (!email || !password) throw new EmailAndPasswordRequiredError();
 
@@ -125,6 +175,13 @@ export class AuthClient {
 
     if (!this.user) {
       throw new WrongCredentialsError();
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("encKey", this.keys?.encryptionSecretKey || "");
+      localStorage.setItem("encPubKey", this.keys?.encryptionPublicKey || "");
+      localStorage.setItem("signKey", this.keys?.signSecretKey || "");
+      localStorage.setItem("signPubKey", this.keys?.signPublicKey || "");
     }
 
     return this.user;
@@ -213,6 +270,13 @@ export class AuthClient {
     this.keys = null;
 
     this.cognitoClient.signOutCognitoUser();
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("encKey");
+      localStorage.removeItem("encPubKey");
+      localStorage.removeItem("signKey");
+      localStorage.removeItem("signPubKey");
+    }
   }
 
   async deleteUser() {

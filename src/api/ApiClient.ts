@@ -143,7 +143,47 @@ export class ApiClient {
     }
   }
 
-  async query<T>(qry: any, variables: QueryVariables): Promise<T> {
+  async query<T>(qry: any, variables?: QueryVariables): Promise<T> {
     return this.graphql.query<T>(qry, variables);
+  }
+
+  async archiveItem({ itemId }: { itemId: string }) {
+    const response = await fetch(`${this.endpoint}/archive/${itemId}`, {
+      method: "POST",
+      body: JSON.stringify({
+        itemId,
+      }),
+      headers: {
+        Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
+      },
+    });
+
+    if (response.status === 403) {
+      throw new ForbiddenError();
+    }
+
+    if (response.status !== 200) {
+      throw new UnexpectedError();
+    }
+  }
+
+  async restoreItem({ itemId }: { itemId: string }) {
+    const response = await fetch(`${this.endpoint}/restore/${itemId}`, {
+      method: "POST",
+      body: JSON.stringify({
+        itemId,
+      }),
+      headers: {
+        Authorization: (await this.auth.getCurrentAuthorizationToken()) || "",
+      },
+    });
+
+    if (response.status === 403) {
+      throw new ForbiddenError();
+    }
+
+    if (response.status !== 200) {
+      throw new UnexpectedError();
+    }
   }
 }

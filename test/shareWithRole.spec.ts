@@ -10,7 +10,7 @@ import { recreateUser } from "./helpers/createUser";
 let id: string;
 let taskId: string;
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {

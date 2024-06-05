@@ -1,5 +1,5 @@
 import { makeExecutableSchema } from "@graphql-tools/schema";
-import { graphql, print, ASTNode, GraphQLSchema, Kind } from "graphql";
+import { graphql, print, ASTNode, GraphQLSchema } from "graphql";
 
 let schema: GraphQLSchema;
 

@@ -6,7 +6,7 @@ import typeDefs from "./fixtures/schema";
 
 import { recreateUser } from "./helpers/createUser";
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {

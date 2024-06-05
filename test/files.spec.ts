@@ -12,7 +12,7 @@ import { recreateUser } from "./helpers/createUser";
 let id: any;
 let fileId: any;
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {
