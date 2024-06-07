@@ -28,6 +28,7 @@ export type QueryVariables = {
   removeUsers?: string[];
   addUsers?: User[];
   roles?: Role[];
+  count?: number;
   referenceIds?: string[];
   sharedRoles?: string[];
   attach?: boolean;

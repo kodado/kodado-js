@@ -384,4 +384,32 @@ export class AuthClient {
       encryptionSecretKey: this.user.keys.encryptionSecretKey,
     };
   }
+
+  async verifyEmailAddress({ email, code }: { email: string; code: string }) {
+    await this.cognitoClient.verifyEmailAddress({ email, code });
+  }
+
+  async enableMfa() {
+    return this.cognitoClient.enableMfa(this.apiClient.endpoint);
+  }
+
+  async disableMfa() {
+    return this.cognitoClient.disableMfa();
+  }
+
+  async sendMfaCode(code: string) {
+    return this.cognitoClient.sendMfaCode(code);
+  }
+
+  async getSoftwareToken() {
+    return this.cognitoClient.getSoftwareToken();
+  }
+
+  async verifySoftwareToken(token: string, deviceName: string) {
+    return this.cognitoClient.verifySoftwareToken(token, deviceName);
+  }
+
+  async sendRecoveryCode(code: string) {
+    return this.cognitoClient.sendRecoveryCode(code);
+  }
 }

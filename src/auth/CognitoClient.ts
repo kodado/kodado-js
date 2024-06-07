@@ -6,6 +6,7 @@ import {
   AuthenticationDetails,
   ISignUpResult,
   CognitoUserAttribute,
+  IMfaSettings,
 } from "amazon-cognito-identity-js";
 
 import { NotSignedInError, WrongCredentialsError } from "../errors/authErrors";
@@ -26,9 +27,11 @@ type UserPool = {
 
 export class CognitoClient {
   private userpool: UserPool;
+  private session: CognitoUserSession | null;
 
   constructor(userpool: UserPool) {
     this.userpool = userpool;
+    this.session = null;
   }
 
   async verifyCognitoUser({
@@ -66,6 +69,8 @@ export class CognitoClient {
       return { mfaRequired: true };
     }
 
+    this.session = session;
+
     return session;
   }
 
@@ -82,6 +87,10 @@ export class CognitoClient {
           email,
           password,
         });
+
+      if (session instanceof CognitoUserSession) {
+        this.session = session;
+      }
 
       return session;
     } catch (e: unknown) {
@@ -258,6 +267,7 @@ export class CognitoClient {
       user.getSession((err: any, session: CognitoUserSession) => {
         if (err) reject(err);
 
+        this.session = session;
         resolve(session);
       });
     });
@@ -310,4 +320,118 @@ export class CognitoClient {
       });
     });
   }
+
+  async verifyEmailAddress({ code, email }: { code: string; email: string }) {
+    const userPool = new CognitoUserPool(this.userpool);
+
+    const user = new CognitoUser({ Pool: userPool, Username: email });
+
+    return new Promise((resolve, reject) => {
+      user.confirmRegistration(code, true, (err, result) => {
+        if (err) return reject(err);
+        return resolve(result);
+      });
+    });
+  }
+
+  async getSoftwareToken() {
+    const userPool = new CognitoUserPool(this.userpool);
+    const user: CognitoUser | null = userPool.getCurrentUser();
+
+    if (!user || !this.session) throw new Error("not signed in");
+
+    user.setSignInUserSession(this.session);
+    await this.refreshSession(user);
+
+    return new Promise((resolve, reject) => {
+      user.associateSoftwareToken({
+        associateSecretCode: (token) => resolve(token),
+        onFailure: (err) => reject(err),
+      });
+    });
+  }
+
+  async verifySoftwareToken(token: string, friendlyDeviceName: string) {
+    const userPool = new CognitoUserPool(this.userpool);
+    const user: CognitoUser | null = userPool.getCurrentUser();
+
+    if (!user || !this.session) throw new Error("not signed in");
+
+    user.setSignInUserSession(this.session);
+    await this.refreshSession(user);
+
+    return new Promise((resolve, reject) => {
+      user.verifySoftwareToken(token, friendlyDeviceName, {
+        onSuccess: (session) => resolve(session),
+        onFailure: (err) => reject(err),
+      });
+    });
+  }
+
+  async setMfaConfiguration(user: CognitoUser) {
+    const mfaSettings: IMfaSettings = {
+      PreferredMfa: true,
+      Enabled: true,
+    };
+    return new Promise((resolve, reject) => {
+      user.setUserMfaPreference(null, mfaSettings, (err, val) => {
+        if (err) reject(err);
+        resolve(val);
+      });
+    });
+  }
+
+  async createMfaRecoveryCode(endpoint: string) {
+    if (!this.session) throw new Error("not signed in");
+
+    const response = await fetch(`${endpoint}/auth/code`, {
+      method: "POST",
+      headers: {
+        Authorization: this.session.getIdToken().getJwtToken(),
+      },
+      body: null,
+    });
+
+    return await response.json();
+  }
+
+  async enableMfa(endpoint: string) {
+    const userPool = new CognitoUserPool(this.userpool);
+    const user: CognitoUser | null = userPool.getCurrentUser();
+
+    if (!user || !this.session) throw new Error("not signed in");
+
+    user.setSignInUserSession(this.session);
+    await this.refreshSession(user);
+
+    await this.setMfaConfiguration(user);
+    return this.createMfaRecoveryCode(endpoint);
+  }
+
+  async disableMfa() {
+    const userPool = new CognitoUserPool(this.userpool);
+    const user: CognitoUser | null = userPool.getCurrentUser();
+
+    if (!user || !this.session) throw new Error("not signed in");
+
+    user.setSignInUserSession(this.session);
+    await this.refreshSession(user);
+
+    return new Promise((resolve, reject) => {
+      user.setUserMfaPreference(
+        null,
+        {
+          PreferredMfa: false,
+          Enabled: false,
+        },
+        (err, val) => {
+          if (err) reject(err);
+          resolve(val);
+        }
+      );
+    });
+  }
+
+  async sendMfaCode(code: string) {}
+  async sendRecoveryCode(code: string) {}
 }
