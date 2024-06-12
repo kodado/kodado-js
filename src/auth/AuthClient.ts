@@ -33,10 +33,9 @@ export type User = {
   fullName: string;
   imageUrl: string;
   companyName: string;
-  emailNotifications: { [key: string]: boolean };
+  emailNotifications?: { type: string; enabled: boolean }[];
   userId: string;
   keys: Keys;
-  mfaEnabled: boolean;
   publicKeys: { username: string; publicKey: string }[];
   idToken: string;
 };
@@ -105,8 +104,6 @@ export class AuthClient {
         signSecretKey,
         signPublicKey,
       },
-      // TODO: implement
-      mfaEnabled: false,
       idToken: idToken.getJwtToken(),
       publicKeys: [],
     };
@@ -166,8 +163,6 @@ export class AuthClient {
           signSecretKey,
           signPublicKey,
         },
-        // TODO: implement
-        mfaEnabled: false,
         idToken: session.getIdToken().getJwtToken(),
         publicKeys: [],
       };
@@ -239,7 +234,7 @@ export class AuthClient {
   }: {
     fullName?: string;
     companyName?: string;
-    emailNotifications?: { [key: string]: boolean };
+    emailNotifications?: { type: string; enabled: boolean }[];
   }) {
     if (!this.user || !this.session) return;
 
@@ -397,8 +392,72 @@ export class AuthClient {
     return this.cognitoClient.disableMfa();
   }
 
-  async sendMfaCode(code: string) {
-    return this.cognitoClient.sendMfaCode(code);
+  async sendMfaCode({
+    email,
+    password,
+    code,
+  }: {
+    email: string;
+    password: string;
+    code: string;
+  }) {
+    const session = await this.cognitoClient.sendMfaCode({
+      email,
+      password,
+      code,
+    });
+
+    this.session = session;
+    this.apiClient.setSession(session);
+
+    const idToken = session.getIdToken();
+
+    const { encryptionSecretKey, signSecretKey } = decryptPrivateKeys(
+      password,
+      idToken.payload["custom:encryptedPrivateKeys"]
+    );
+
+    const { encryptionPublicKey, signPublicKey, imageUrl } =
+      await this.apiClient.getUserProfile(
+        idToken.payload.nickname,
+        this.session.getIdToken().getJwtToken()
+      );
+
+    this.keys = {
+      encryptionSecretKey,
+      encryptionPublicKey,
+      signSecretKey,
+      signPublicKey,
+    };
+
+    this.user = {
+      email,
+      nickname: idToken.payload.nickname,
+      fullName: idToken.payload.name,
+      imageUrl,
+      companyName: idToken.payload["custom:companyName"],
+      emailNotifications: idToken.payload["custom:emailNotifications"]
+        ? JSON.parse(idToken.payload["custom:emailNotifications"])
+        : {},
+      userId: idToken.payload.sub,
+      keys: {
+        encryptionSecretKey,
+        encryptionPublicKey,
+        signSecretKey,
+        signPublicKey,
+      },
+      idToken: session.getIdToken().getJwtToken(),
+      publicKeys: [],
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("encKey", this.keys?.encryptionSecretKey || "");
+      localStorage.setItem("encPubKey", this.keys?.encryptionPublicKey || "");
+      localStorage.setItem("signKey", this.keys?.signSecretKey || "");
+      localStorage.setItem("signPubKey", this.keys?.signPublicKey || "");
+    }
+
+    return this.user;
   }
 
   async getSoftwareToken() {
@@ -409,7 +468,24 @@ export class AuthClient {
     return this.cognitoClient.verifySoftwareToken(token, deviceName);
   }
 
-  async sendRecoveryCode(code: string) {
-    return this.cognitoClient.sendRecoveryCode(code);
+  async sendRecoveryCode({
+    email,
+    password,
+    recoveryCode,
+  }: {
+    email: string;
+    password: string;
+    recoveryCode: string;
+  }) {
+    await fetch(`${this.apiClient.endpoint}/auth/code/verify`, {
+      method: "POST",
+
+      body: JSON.stringify({
+        recoveryCode,
+        username: email,
+      }),
+    });
+
+    return this.signIn({ email, password });
   }
 }

@@ -432,6 +432,30 @@ export class CognitoClient {
     });
   }
 
-  async sendMfaCode(code: string) {}
-  async sendRecoveryCode(code: string) {}
+  async sendMfaCode({
+    email,
+    password,
+    code,
+  }: {
+    email: string;
+    password: string;
+    code: string;
+  }) {
+    return new Promise<CognitoUserSession>(async (resolve, reject) => {
+      const user = await this.verifyCognitoUser({ email, password });
+
+      if (user instanceof CognitoUser) {
+        user.sendMFACode(
+          code,
+          {
+            onSuccess: async (session: CognitoUserSession) => {
+              resolve(session);
+            },
+            onFailure: (err: unknown) => reject(err),
+          },
+          "SOFTWARE_TOKEN_MFA"
+        );
+      }
+    });
+  }
 }
