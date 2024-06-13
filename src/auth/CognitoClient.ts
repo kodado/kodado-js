@@ -64,13 +64,6 @@ export class CognitoClient {
       }
     );
 
-    if (session instanceof CognitoUser) {
-      // @ts-expect-error TODO: fix
-      return { mfaRequired: true };
-    }
-
-    this.session = session;
-
     return session;
   }
 
@@ -444,18 +437,20 @@ export class CognitoClient {
     return new Promise<CognitoUserSession>(async (resolve, reject) => {
       const user = await this.verifyCognitoUser({ email, password });
 
-      if (user instanceof CognitoUser) {
-        user.sendMFACode(
-          code,
-          {
-            onSuccess: async (session: CognitoUserSession) => {
-              resolve(session);
-            },
-            onFailure: (err: unknown) => reject(err),
-          },
-          "SOFTWARE_TOKEN_MFA"
-        );
+      if (user instanceof CognitoUserSession) {
+        return;
       }
+
+      user.sendMFACode(
+        code,
+        {
+          onSuccess: async (session: CognitoUserSession) => {
+            resolve(session);
+          },
+          onFailure: (err: unknown) => reject(err),
+        },
+        "SOFTWARE_TOKEN_MFA"
+      );
     });
   }
 }

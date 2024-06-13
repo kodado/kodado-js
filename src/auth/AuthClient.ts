@@ -1,5 +1,5 @@
 import { encodeBase64 } from "tweetnacl-util";
-import { CognitoUserSession } from "amazon-cognito-identity-js";
+import { CognitoUser, CognitoUserSession } from "amazon-cognito-identity-js";
 
 import {
   UsernameAlreadyExistsError,
@@ -89,7 +89,7 @@ export class AuthClient {
     );
 
     this.user = {
-      email: profile.email,
+      email: idToken.payload.email,
       nickname: idToken.payload.nickname,
       fullName: idToken.payload.name,
       imageUrl: profile.imageUrl,
@@ -121,6 +121,10 @@ export class AuthClient {
 
     if (!session) {
       throw new WrongCredentialsError();
+    }
+
+    if (session instanceof CognitoUser) {
+      return "MFA_REQUIRED";
     }
 
     if (session instanceof CognitoUserSession) {
