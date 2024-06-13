@@ -36,6 +36,7 @@ export type User = {
   emailNotifications?: { type: string; enabled: boolean }[];
   userId: string;
   keys: Keys;
+  mfaEnabled: boolean;
   publicKeys: { username: string; publicKey: string }[];
   idToken: string;
 };
@@ -88,6 +89,13 @@ export class AuthClient {
       this.session.getIdToken().getJwtToken()
     );
 
+    const userData = await new Promise((resolve, reject) => {
+      user.getUserData((e, data) => {
+        if (e) reject(e);
+        resolve(data);
+      });
+    });
+
     this.user = {
       email: idToken.payload.email,
       nickname: idToken.payload.nickname,
@@ -104,6 +112,7 @@ export class AuthClient {
         signSecretKey,
         signPublicKey,
       },
+      mfaEnabled: userData?.hasOwnProperty("UserMFASettingList") || false,
       idToken: idToken.getJwtToken(),
       publicKeys: [],
     };
@@ -167,6 +176,8 @@ export class AuthClient {
           signSecretKey,
           signPublicKey,
         },
+        // MFA is not required
+        mfaEnabled: false,
         idToken: session.getIdToken().getJwtToken(),
         publicKeys: [],
       };
@@ -389,11 +400,22 @@ export class AuthClient {
   }
 
   async enableMfa() {
-    return this.cognitoClient.enableMfa(this.apiClient.endpoint);
+    const recoveryToken = await this.cognitoClient.enableMfa(
+      this.apiClient.endpoint
+    );
+    if (this.user) {
+      this.user.mfaEnabled = true;
+    }
+
+    return recoveryToken;
   }
 
   async disableMfa() {
-    return this.cognitoClient.disableMfa();
+    this.cognitoClient.disableMfa();
+
+    if (this.user) {
+      this.user.mfaEnabled = false;
+    }
   }
 
   async sendMfaCode({
@@ -450,6 +472,7 @@ export class AuthClient {
         signSecretKey,
         signPublicKey,
       },
+      mfaEnabled: true,
       idToken: session.getIdToken().getJwtToken(),
       publicKeys: [],
     };

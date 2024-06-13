@@ -385,7 +385,7 @@ export class CognitoClient {
       body: null,
     });
 
-    return await response.json();
+    return (await response.json()) as string;
   }
 
   async enableMfa(endpoint: string) {
