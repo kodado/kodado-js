@@ -24,7 +24,7 @@ type User = { username: string; role: string };
 export type QueryVariables = {
   id?: string;
   item?: object | string;
-  users?: User[];
+  users?: { username: string; role: string }[];
   removeUsers?: string[];
   addUsers?: User[];
   roles?: Role[];
