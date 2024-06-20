@@ -1,8 +1,8 @@
 {
   "name": "@kodado/kodado-js",
   "version": "0.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "browser": "dist/index.js",
+  "main": "dist_node/index.js",
   "description": "",
   "scripts": {
     "build": "bun run build.mjs",
