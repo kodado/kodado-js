@@ -78,7 +78,7 @@ export async function decryptItem(item: any, user: User, query?: any) {
 }
 
 export function encryptFile(
-  file: Buffer | Uint8Array,
+  file: Uint8Array,
   item: any,
   keys: any,
   publicKey: string,

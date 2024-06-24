@@ -24,10 +24,11 @@ type User = { username: string; role: string };
 export type QueryVariables = {
   id?: string;
   item?: object | string;
-  users?: User[];
+  users?: { username: string; role: string }[];
   removeUsers?: string[];
   addUsers?: User[];
   roles?: Role[];
+  count?: number;
   referenceIds?: string[];
   sharedRoles?: string[];
   attach?: boolean;
@@ -277,7 +278,7 @@ export class GraphQLClient {
     }
   }
 
-  async query<T>(qry: any, variables: QueryVariables): Promise<T> {
+  async query<T>(qry: any, variables?: QueryVariables): Promise<T> {
     if (!this.auth.user) {
       throw new NotSignedInError();
     }
@@ -301,18 +302,21 @@ export class GraphQLClient {
 
     let encKey = null;
     let userKeys = [];
-    const sharedKeys = await this.getUserKeys(variables, qry, idToken);
 
-    if (variables.item) {
-      const { encryptedItem, encryptedKey, encryptedUserKeys } = encryptItem(
-        variables.item,
-        sharedKeys,
-        this.auth.user
-      );
+    if (variables) {
+      const sharedKeys = await this.getUserKeys(variables, qry, idToken);
 
-      variables.item = encryptedItem;
-      encKey = encryptedKey;
-      userKeys = encryptedUserKeys;
+      if (variables.item) {
+        const { encryptedItem, encryptedKey, encryptedUserKeys } = encryptItem(
+          variables.item,
+          sharedKeys,
+          this.auth.user
+        );
+
+        variables.item = encryptedItem;
+        encKey = encryptedKey;
+        userKeys = encryptedUserKeys;
+      }
     }
 
     const response = await fetch(`${this.endpoint}/graphql`, {
@@ -322,7 +326,7 @@ export class GraphQLClient {
         variables,
         key: encKey,
         userKeys,
-        roles: variables.roles,
+        roles: variables?.roles,
         publicKey: this.auth.user.keys.encryptionPublicKey,
       }),
       headers: {

@@ -31,4 +31,10 @@ export class KodadoClient {
       typeDefs: typeDefs,
     });
   }
+
+  async init() {
+    if (typeof window !== "undefined") {
+      await this.auth.initFromLocalStorage();
+    }
+  }
 }

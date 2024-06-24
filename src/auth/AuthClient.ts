@@ -1,5 +1,5 @@
 import { encodeBase64 } from "tweetnacl-util";
-import { CognitoUserSession } from "amazon-cognito-identity-js";
+import { CognitoUser, CognitoUserSession } from "amazon-cognito-identity-js";
 
 import {
   UsernameAlreadyExistsError,
@@ -33,7 +33,7 @@ export type User = {
   fullName: string;
   imageUrl: string;
   companyName: string;
-  emailNotifications: { [key: string]: boolean };
+  emailNotifications?: { type: string; enabled: boolean }[];
   userId: string;
   keys: Keys;
   mfaEnabled: boolean;
@@ -62,6 +62,62 @@ export class AuthClient {
     this.user = null;
   }
 
+  async initFromLocalStorage() {
+    const encryptionSecretKey = localStorage.getItem("encKey") || "";
+    const encryptionPublicKey = localStorage.getItem("encPubKey") || "";
+    const signSecretKey = localStorage.getItem("signKey") || "";
+    const signPublicKey = localStorage.getItem("signPubKey") || "";
+
+    this.keys = {
+      encryptionSecretKey,
+      encryptionPublicKey,
+      signSecretKey,
+      signPublicKey,
+    };
+
+    const user = this.cognitoClient.getCurrentUser();
+    if (!user) return;
+
+    const session = await this.cognitoClient.getCurrentSession(user);
+    user.setSignInUserSession(session);
+
+    this.session = session;
+    const idToken = session.getIdToken();
+
+    const profile = await this.apiClient.getUserProfile(
+      idToken.payload.nickname,
+      this.session.getIdToken().getJwtToken()
+    );
+
+    const userData = await new Promise((resolve, reject) => {
+      user.getUserData((e, data) => {
+        if (e) reject(e);
+        resolve(data);
+      });
+    });
+
+    this.user = {
+      email: idToken.payload.email,
+      nickname: idToken.payload.nickname,
+      fullName: idToken.payload.name,
+      imageUrl: profile.imageUrl,
+      companyName: idToken.payload["custom:companyName"],
+      emailNotifications: idToken.payload["custom:emailNotifications"]
+        ? JSON.parse(idToken.payload["custom:emailNotifications"])
+        : {},
+      userId: idToken.payload.sub,
+      keys: {
+        encryptionSecretKey,
+        encryptionPublicKey,
+        signSecretKey,
+        signPublicKey,
+      },
+      mfaEnabled: userData?.hasOwnProperty("UserMFASettingList") || false,
+      idToken: idToken.getJwtToken(),
+      publicKeys: [],
+    };
+  }
+
   async signIn({ email, password }: { email: string; password: string }) {
     if (!email || !password) throw new EmailAndPasswordRequiredError();
 
@@ -74,6 +130,10 @@ export class AuthClient {
 
     if (!session) {
       throw new WrongCredentialsError();
+    }
+
+    if (session instanceof CognitoUser) {
+      return "MFA_REQUIRED";
     }
 
     if (session instanceof CognitoUserSession) {
@@ -116,7 +176,7 @@ export class AuthClient {
           signSecretKey,
           signPublicKey,
         },
-        // TODO: implement
+        // MFA is not required
         mfaEnabled: false,
         idToken: session.getIdToken().getJwtToken(),
         publicKeys: [],
@@ -125,6 +185,13 @@ export class AuthClient {
 
     if (!this.user) {
       throw new WrongCredentialsError();
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("encKey", this.keys?.encryptionSecretKey || "");
+      localStorage.setItem("encPubKey", this.keys?.encryptionPublicKey || "");
+      localStorage.setItem("signKey", this.keys?.signSecretKey || "");
+      localStorage.setItem("signPubKey", this.keys?.signPublicKey || "");
     }
 
     return this.user;
@@ -182,7 +249,7 @@ export class AuthClient {
   }: {
     fullName?: string;
     companyName?: string;
-    emailNotifications?: { [key: string]: boolean };
+    emailNotifications?: { type: string; enabled: boolean }[];
   }) {
     if (!this.user || !this.session) return;
 
@@ -213,6 +280,13 @@ export class AuthClient {
     this.keys = null;
 
     this.cognitoClient.signOutCognitoUser();
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("encKey");
+      localStorage.removeItem("encPubKey");
+      localStorage.removeItem("signKey");
+      localStorage.removeItem("signPubKey");
+    }
   }
 
   async deleteUser() {
@@ -319,5 +393,126 @@ export class AuthClient {
       encryptionPublicKey: this.user.keys.encryptionPublicKey,
       encryptionSecretKey: this.user.keys.encryptionSecretKey,
     };
+  }
+
+  async verifyEmailAddress({ email, code }: { email: string; code: string }) {
+    await this.cognitoClient.verifyEmailAddress({ email, code });
+  }
+
+  async enableMfa() {
+    const recoveryToken = await this.cognitoClient.enableMfa(
+      this.apiClient.endpoint
+    );
+    if (this.user) {
+      this.user.mfaEnabled = true;
+    }
+
+    return recoveryToken;
+  }
+
+  async disableMfa() {
+    this.cognitoClient.disableMfa();
+
+    if (this.user) {
+      this.user.mfaEnabled = false;
+    }
+  }
+
+  async sendMfaCode({
+    email,
+    password,
+    code,
+  }: {
+    email: string;
+    password: string;
+    code: string;
+  }) {
+    const session = await this.cognitoClient.sendMfaCode({
+      email,
+      password,
+      code,
+    });
+
+    this.session = session;
+    this.apiClient.setSession(session);
+
+    const idToken = session.getIdToken();
+
+    const { encryptionSecretKey, signSecretKey } = decryptPrivateKeys(
+      password,
+      idToken.payload["custom:encryptedPrivateKeys"]
+    );
+
+    const { encryptionPublicKey, signPublicKey, imageUrl } =
+      await this.apiClient.getUserProfile(
+        idToken.payload.nickname,
+        this.session.getIdToken().getJwtToken()
+      );
+
+    this.keys = {
+      encryptionSecretKey,
+      encryptionPublicKey,
+      signSecretKey,
+      signPublicKey,
+    };
+
+    this.user = {
+      email,
+      nickname: idToken.payload.nickname,
+      fullName: idToken.payload.name,
+      imageUrl,
+      companyName: idToken.payload["custom:companyName"],
+      emailNotifications: idToken.payload["custom:emailNotifications"]
+        ? JSON.parse(idToken.payload["custom:emailNotifications"])
+        : {},
+      userId: idToken.payload.sub,
+      keys: {
+        encryptionSecretKey,
+        encryptionPublicKey,
+        signSecretKey,
+        signPublicKey,
+      },
+      mfaEnabled: true,
+      idToken: session.getIdToken().getJwtToken(),
+      publicKeys: [],
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("encKey", this.keys?.encryptionSecretKey || "");
+      localStorage.setItem("encPubKey", this.keys?.encryptionPublicKey || "");
+      localStorage.setItem("signKey", this.keys?.signSecretKey || "");
+      localStorage.setItem("signPubKey", this.keys?.signPublicKey || "");
+    }
+
+    return this.user;
+  }
+
+  async getSoftwareToken() {
+    return this.cognitoClient.getSoftwareToken();
+  }
+
+  async verifySoftwareToken(token: string, deviceName: string) {
+    return this.cognitoClient.verifySoftwareToken(token, deviceName);
+  }
+
+  async sendRecoveryCode({
+    email,
+    password,
+    recoveryCode,
+  }: {
+    email: string;
+    password: string;
+    recoveryCode: string;
+  }) {
+    await fetch(`${this.apiClient.endpoint}/auth/code/verify`, {
+      method: "POST",
+
+      body: JSON.stringify({
+        recoveryCode,
+        username: email,
+      }),
+    });
+
+    return this.signIn({ email, password });
   }
 }

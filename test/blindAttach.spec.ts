@@ -11,7 +11,7 @@ let id: string;
 let todoId: string;
 let taskId: string;
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {

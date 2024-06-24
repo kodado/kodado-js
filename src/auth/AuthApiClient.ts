@@ -10,7 +10,7 @@ type ProfileAttributes = {
 };
 
 export class AuthApiClient {
-  private endpoint: string;
+  endpoint: string;
   private session: CognitoUserSession | null;
 
   constructor(endpoint: string) {

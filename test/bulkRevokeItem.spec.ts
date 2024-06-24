@@ -8,7 +8,7 @@ import { recreateUser } from "./helpers/createUser";
 
 const ids: string[] = [];
 
-const client = createClient({
+const client = await createClient({
   typeDefs,
   resolvers: {},
   userpool: {

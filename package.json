@@ -1,8 +1,9 @@
 {
-  "name": "kodado-js",
+  "name": "@kodado/kodado-js",
   "version": "0.0.0",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "browser": "dist/index.js",
+  "main": "dist_node/index.js",
+  "type": "module",
   "description": "",
   "scripts": {
     "build": "bun run build.mjs",
@@ -11,12 +12,8 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
-  "files": [
-    "dist"
-  ],
-  "keywords": [
-    "bun"
-  ],
+  "files": ["dist"],
+  "keywords": ["bun"],
   "devDependencies": {
     "@types/bun": "^1.0.0",
     "@types/web": "^0.0.143",

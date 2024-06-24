@@ -25,7 +25,7 @@ export const encrypt = (message: any, key: string) => {
   return base64FullMessage;
 };
 
-export const encryptFile = (file: Buffer | Uint8Array, key: string) => {
+export const encryptFile = (file: Uint8Array, key: string) => {
   const keyUint8Array = decodeBase64(key);
 
   const nonce = newNonce();

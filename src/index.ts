@@ -1,6 +1,6 @@
 import { KodadoClient } from "./KodadoClient";
 
-export function createClient({
+export async function createClient({
   typeDefs,
   resolvers,
   userpool,
@@ -14,5 +14,9 @@ export function createClient({
   };
   endpoint: string;
 }) {
-  return new KodadoClient({ typeDefs, resolvers, userpool, endpoint });
+  const client = new KodadoClient({ typeDefs, resolvers, userpool, endpoint });
+
+  await client.init();
+
+  return client;
 }
