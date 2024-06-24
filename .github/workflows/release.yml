@@ -3,20 +3,36 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
-  release:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: 16.x
+          node-version: "16.x"
+          cache: "npm"
 
-      - run: npx changelogithub
+      - name: Install Bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo 'export BUN_INSTALL="$HOME/.bun"' >> $GITHUB_ENV
+          echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> $GITHUB_ENV
+          source $GITHUB_ENV
+
+      - name: Install dependencies using Bun
+        run: bun install
+
+      - name: Run build script using Bun
+        run: bun run build
+
+      - name: Publish to npm
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish

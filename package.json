@@ -1,6 +1,6 @@
 {
   "name": "@kodado/kodado-js",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "browser": "dist/index.js",
   "main": "dist_node/index.js",
   "type": "module",
