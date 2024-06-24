@@ -41,7 +41,7 @@ const output2 = await Bun.build({
   minify: false,
   plugins: [dts(), nodeBuffer],
   define: {
-    global: "window",
+    window: "undefined",
   },
 });
 

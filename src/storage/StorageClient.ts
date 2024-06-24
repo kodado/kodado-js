@@ -51,7 +51,7 @@ export class StorageClient {
     mimeType,
   }: {
     itemId: string;
-    file: Buffer;
+    file: File | Buffer;
     name: string;
     mimeType: string;
   }) {
@@ -63,9 +63,11 @@ export class StorageClient {
       body: JSON.stringify({}),
     });
 
+    const bytes = file instanceof File ? await file.arrayBuffer() : file.buffer;
+
     const keys = await response.json();
     const encryptedFile = encryptFile(
-      file,
+      new Uint8Array(bytes),
       { name, mimeType },
       keys,
       this.auth.user?.keys.encryptionPublicKey || "",

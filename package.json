@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "browser": "dist/index.js",
   "main": "dist_node/index.js",
+  "type": "module",
   "description": "",
   "scripts": {
     "build": "bun run build.mjs",
