@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "browser": "dist/index.js",
   "main": "dist_node/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
   "description": "kodado's javascript client",
   "repository": {
