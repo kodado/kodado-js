@@ -335,6 +335,7 @@ export class AuthClient {
     encryptionSecretKey: string;
   }> {
     if (!this.user || !this.session) throw new NotSignedInError();
+    this.apiClient.setSession(this.session);
 
     await this.cognitoClient.updatePassword({
       oldPassword,
