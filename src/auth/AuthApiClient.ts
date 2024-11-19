@@ -93,7 +93,29 @@ export class AuthApiClient {
       },
     });
 
-    return response.json();
+    const { keys, totalPages } = await response.json();
+
+    if (totalPages > 1) {
+      const additionalKeys = await Promise.all(
+        Array.from({ length: totalPages - 1 }, async (_, index) => {
+          const response = await fetch(`${this.endpoint}/keys/user`, {
+            method: "POST",
+            headers: {
+              Authorization: this.session?.getIdToken().getJwtToken() || "",
+            },
+            body: JSON.stringify({ page: index + 2 }),
+          });
+
+          const { keys } = await response.json();
+
+          return keys;
+        })
+      );
+
+      return keys.concat(...additionalKeys);
+    }
+
+    return keys;
   }
 
   async updateItemKeys(encryptionPublicKey: string, encryptedItemKeys: any) {

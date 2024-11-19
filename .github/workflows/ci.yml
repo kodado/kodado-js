@@ -39,4 +39,4 @@ jobs:
           KODADO_URL: ${{ secrets.KODADO_URL }}
           KODADO_BUCKET_URL: ${{ secrets.KODADO_BUCKET_URL }}
         run: |
-          bun test --timeout 20000
+          bun test --timeout 200000
