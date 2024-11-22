@@ -368,6 +368,7 @@ export class AuthClient {
       publicKey: this.user?.keys.encryptionPublicKey,
       role: key.role,
       userId: key.userId,
+      itemType: key.itemType,
       key: encryptItemKey(
         key.decryptedKey,
         this.user?.keys.encryptionPublicKey || "",
