@@ -391,6 +391,16 @@ export class AuthClient {
       encryptedItemKeys
     );
 
+    if (this.keys) {
+      this.keys.encryptionPublicKey = this.user.keys.encryptionPublicKey;
+      this.keys.encryptionSecretKey = this.user.keys.encryptionSecretKey;
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("encKey", this.user.keys.encryptionSecretKey);
+      localStorage.setItem("encPubKey", this.user.keys.encryptionPublicKey);
+    }
+
     return {
       encryptionPublicKey: this.user.keys.encryptionPublicKey,
       encryptionSecretKey: this.user.keys.encryptionSecretKey,
