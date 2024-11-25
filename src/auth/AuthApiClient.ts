@@ -44,34 +44,36 @@ export class AuthApiClient {
     fullName,
     companyName,
     emailNotifications,
+    token,
   }: {
     fullName?: string;
     companyName?: string;
     emailNotifications?: string;
+    token: string;
   }) {
     await fetch(`${this.endpoint}/auth/profile`, {
       method: "PUT",
       body: JSON.stringify({ fullName, companyName, emailNotifications }),
       headers: {
-        Authorization: this.session?.getIdToken().getJwtToken() || "",
+        Authorization: token,
       },
     });
   }
 
-  async deleteUserProfile() {
+  async deleteUserProfile(token: string) {
     await fetch(`${this.endpoint}/auth`, {
       method: "DELETE",
       headers: {
-        Authorization: this.session?.getIdToken().getJwtToken() || "",
+        Authorization: token,
       },
     });
   }
 
-  async uploadUserProfileImage(image: any) {
+  async uploadUserProfileImage(image: any, token: string) {
     const response = await fetch(`${this.endpoint}/auth/profile/image`, {
       method: "POST",
       headers: {
-        Authorization: this.session?.getIdToken().getJwtToken() || "",
+        Authorization: token,
       },
     });
 
@@ -85,7 +87,7 @@ export class AuthApiClient {
     return data;
   }
 
-  async getUserKeys() {
+  async getUserKeys(token: string) {
     const response = await fetch(`${this.endpoint}/keys/user`, {
       method: "POST",
       headers: {
@@ -101,7 +103,7 @@ export class AuthApiClient {
           const response = await fetch(`${this.endpoint}/keys/user`, {
             method: "POST",
             headers: {
-              Authorization: this.session?.getIdToken().getJwtToken() || "",
+              Authorization: token,
             },
             body: JSON.stringify({ page: index + 2 }),
           });
@@ -118,12 +120,16 @@ export class AuthApiClient {
     return keys;
   }
 
-  async updateItemKeys(encryptionPublicKey: string, encryptedItemKeys: any) {
+  async updateItemKeys(
+    encryptionPublicKey: string,
+    encryptedItemKeys: any,
+    token: string
+  ) {
     await fetch(`${this.endpoint}/auth/password`, {
       method: "POST",
 
       headers: {
-        Authorization: this.session?.getIdToken().getJwtToken() || "",
+        Authorization: token,
       },
       body: JSON.stringify({
         encryptionPublicKey,

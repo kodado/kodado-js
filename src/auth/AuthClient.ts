@@ -257,6 +257,7 @@ export class AuthClient {
       fullName,
       companyName,
       emailNotifications: JSON.stringify(emailNotifications),
+      token: (await this.getCurrentAuthorizationToken()) || "",
     });
     await this.cognitoClient.updateCognitoProfile(this.session, {
       fullName,
@@ -271,7 +272,10 @@ export class AuthClient {
   }
 
   async uploadProfileImage(image: any) {
-    await this.apiClient.uploadUserProfileImage(image);
+    await this.apiClient.uploadUserProfileImage(
+      image,
+      (await this.getCurrentAuthorizationToken()) || ""
+    );
   }
 
   signOut() {
@@ -298,7 +302,9 @@ export class AuthClient {
 
     user.setSignInUserSession(this.session);
 
-    await this.apiClient.deleteUserProfile();
+    await this.apiClient.deleteUserProfile(
+      (await this.getCurrentAuthorizationToken()) || ""
+    );
 
     this.user = null;
     this.session = null;
@@ -342,7 +348,9 @@ export class AuthClient {
       newPassword,
     });
 
-    const keys = await this.apiClient.getUserKeys();
+    const keys = await this.apiClient.getUserKeys(
+      (await this.getCurrentAuthorizationToken()) || ""
+    );
 
     const decryptedItemKeys = keys.map((key: any) => ({
       ...key,
@@ -388,7 +396,8 @@ export class AuthClient {
 
     await this.apiClient.updateItemKeys(
       encodeBase64(newKeys.encryptionPublicKey),
-      encryptedItemKeys
+      encryptedItemKeys,
+      (await this.getCurrentAuthorizationToken()) || ""
     );
 
     if (this.keys) {
