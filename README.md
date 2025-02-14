@@ -1,4 +1,4 @@
-# Kodado
+# [Kodado](https://kodado.dev/)
 
 Kodado is an end to end encrypted app development framework that allows you to build secure applications with ease.
 
@@ -79,7 +79,7 @@ const response = await client.api.query(qry, {});
 
 # Documentation
 
-TBD
+https://kodado.github.io/kodado-js/
 
 # Contributing
 
