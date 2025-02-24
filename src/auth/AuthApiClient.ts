@@ -1,4 +1,6 @@
 import { CognitoUserSession } from "amazon-cognito-identity-js";
+import { chunks } from "../helpers/chunks";
+import { Key } from "../api/types";
 
 type ProfileAttributes = {
   username: string;
@@ -122,19 +124,24 @@ export class AuthApiClient {
 
   async updateItemKeys(
     encryptionPublicKey: string,
-    encryptedItemKeys: any,
+    encryptedItemKeys: Key[],
     token: string
   ) {
-    await fetch(`${this.endpoint}/auth/password`, {
-      method: "POST",
+    const encryptedItemKeysChunks = chunks(encryptedItemKeys, 5000);
 
-      headers: {
-        Authorization: token,
-      },
-      body: JSON.stringify({
-        encryptionPublicKey,
-        encryptedItemKeys,
-      }),
+    const promises = encryptedItemKeysChunks.map((chunk: Key[]) => {
+      return fetch(`${this.endpoint}/auth/password`, {
+        method: "POST",
+        headers: {
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          encryptionPublicKey,
+          encryptedItemKeys: chunk,
+        }),
+      });
     });
+
+    await Promise.all(promises);
   }
 }
