@@ -122,19 +122,47 @@ export class AuthApiClient {
 
   async updateItemKeys(
     encryptionPublicKey: string,
-    encryptedItemKeys: any,
+    encryptedItemKeys: Key[],
     token: string
   ) {
-    await fetch(`${this.endpoint}/auth/password`, {
-      method: "POST",
+    const chunks = encryptedItemKeys.reduce(
+      (acc: Key[][], key: Key, index: number) => {
+        if (index % 5000 === 0) {
+          acc.push([]);
+        }
 
-      headers: {
-        Authorization: token,
+        acc[acc.length - 1].push(key);
+
+        return acc;
       },
-      body: JSON.stringify({
-        encryptionPublicKey,
-        encryptedItemKeys,
-      }),
-    });
+      []
+    );
+
+    console.log(chunks);
+
+    const promises = chunks.map((chunk: Key[]) =>
+      fetch(`${this.endpoint}/auth/password`, {
+        method: "POST",
+        headers: {
+          Authorization: token,
+        },
+        body: JSON.stringify({
+          encryptionPublicKey,
+          chunk,
+        }),
+      })
+    );
+
+    await Promise.all(promises);
   }
 }
+
+// TODO: Move to a better place
+type Key = {
+  itemId: string;
+  publicKey: string;
+  role: string;
+  userId: string;
+  itemType: string;
+  key: string;
+};
