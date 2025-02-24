@@ -125,36 +125,31 @@ export class AuthApiClient {
     encryptedItemKeys: Key[],
     token: string
   ) {
-    const chunks = encryptedItemKeys.reduce(
-      (acc: Key[][], key: Key, index: number) => {
-        if (index % 5000 === 0) {
-          acc.push([]);
-        }
+    const encryptedItemKeysChunks = chunks(encryptedItemKeys, 5000);
 
-        acc[acc.length - 1].push(key);
-
-        return acc;
-      },
-      []
-    );
-
-    console.log(chunks);
-
-    const promises = chunks.map((chunk: Key[]) =>
-      fetch(`${this.endpoint}/auth/password`, {
+    const promises = encryptedItemKeysChunks.map((chunk: Key[]) => {
+      return fetch(`${this.endpoint}/auth/password`, {
         method: "POST",
         headers: {
           Authorization: token,
         },
         body: JSON.stringify({
           encryptionPublicKey,
-          chunk,
+          encryptedItemKeys: chunk,
         }),
-      })
-    );
+      });
+    });
 
     await Promise.all(promises);
   }
+}
+
+function chunks<T>(inputArray: T[], perChunk: number) {
+  const bulks: T[][] = [];
+  for (let i = 0; i < Math.ceil(inputArray.length / perChunk); i++) {
+    bulks.push(inputArray.slice(i * perChunk, (i + 1) * perChunk));
+  }
+  return bulks;
 }
 
 // TODO: Move to a better place
