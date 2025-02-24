@@ -1,4 +1,6 @@
 import { CognitoUserSession } from "amazon-cognito-identity-js";
+import { chunks } from "../helpers/chunks";
+import { Key } from "../api/types";
 
 type ProfileAttributes = {
   username: string;
@@ -143,21 +145,3 @@ export class AuthApiClient {
     await Promise.all(promises);
   }
 }
-
-function chunks<T>(inputArray: T[], perChunk: number) {
-  const bulks: T[][] = [];
-  for (let i = 0; i < Math.ceil(inputArray.length / perChunk); i++) {
-    bulks.push(inputArray.slice(i * perChunk, (i + 1) * perChunk));
-  }
-  return bulks;
-}
-
-// TODO: Move to a better place
-type Key = {
-  itemId: string;
-  publicKey: string;
-  role: string;
-  userId: string;
-  itemType: string;
-  key: string;
-};
