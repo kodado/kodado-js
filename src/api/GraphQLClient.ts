@@ -41,7 +41,10 @@ export type QueryVariables = {
 };
 
 export class GraphQLClient {
-  constructor(private endpoint: string, private auth: AuthClient) {}
+  constructor(
+    private endpoint: string,
+    private auth: AuthClient
+  ) {}
 
   private createSelection(value: string) {
     return {
@@ -91,6 +94,53 @@ export class GraphQLClient {
     }
   }
 
+  private async decodeArray(items: any, query: any, i: number) {
+    if (!this.auth.user) return;
+
+    if (
+      items[i].users &&
+      items[i].users[0].username &&
+      items[i].users[0].publicKey
+    ) {
+      for (const user of items[i].users) {
+        this.addPublicKey(user);
+      }
+    }
+
+    const resolvedItem = items[i].item
+      ? await decryptItem(items[i], this.auth.user, query)
+      : undefined;
+    const subqueries = query.selectionSet.selections.filter(
+      (subQ: any) => subQ.name.value === "items" || subQ.name.value === "files"
+    );
+
+    if (!subqueries.length) {
+      items[i] = resolvedItem ? { ...items[i], item: resolvedItem } : items[i];
+      return;
+    }
+
+    const subqueryObject: any = {};
+
+    for (const subquery of subqueries) {
+      const name = subquery.alias ? subquery.alias.value : subquery.name.value;
+
+      subqueryObject[name] = await this.deepDecode(items[i][name], subquery);
+    }
+
+    if (resolvedItem) {
+      items[i] = {
+        ...items[i],
+        item: resolvedItem,
+        ...subqueryObject,
+      };
+    } else {
+      items[i] = {
+        ...items[i],
+        ...subqueryObject,
+      };
+    }
+  }
+
   private async deepDecode(items: any, query: any): Promise<any> {
     if (!this.auth.user) return;
     if (!items) return;
@@ -128,55 +178,11 @@ export class GraphQLClient {
       return { ...items, item: resolvedItem, ...subqueryObject };
     }
 
-    for (let i = 0; i < items.length; i++) {
-      if (
-        items[i].users &&
-        items[i].users[0].username &&
-        items[i].users[0].publicKey
-      ) {
-        for (const user of items[i].users) {
-          this.addPublicKey(user);
-        }
-      }
+    const decodePromises = items.map((_, i: number) =>
+      this.decodeArray(items, query, i)
+    );
 
-      const resolvedItem = items[i].item
-        ? await decryptItem(items[i], this.auth.user, query)
-        : undefined;
-      const subqueries = query.selectionSet.selections.filter(
-        (subQ: any) =>
-          subQ.name.value === "items" || subQ.name.value === "files"
-      );
-
-      if (!subqueries.length) {
-        items[i] = resolvedItem
-          ? { ...items[i], item: resolvedItem }
-          : items[i];
-        continue;
-      }
-
-      const subqueryObject: any = {};
-
-      for (const subquery of subqueries) {
-        const name = subquery.alias
-          ? subquery.alias.value
-          : subquery.name.value;
-
-        subqueryObject[name] = await this.deepDecode(items[i][name], subquery);
-      }
-
-      if (resolvedItem) {
-        items[i] = {
-          ...items[i],
-          item: resolvedItem,
-          ...subqueryObject,
-        };
-      } else {
-        items[i] = {
-          ...items[i],
-          ...subqueryObject,
-        };
-      }
-    }
+    await Promise.all(decodePromises);
 
     return items;
   }
