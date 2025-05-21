@@ -33,7 +33,7 @@ export type User = {
   fullName: string;
   imageUrl: string;
   companyName: string;
-  emailNotifications?: { type: string; enabled: boolean }[];
+  emailNotifications?: Record<string, boolean>;
   userId: string;
   keys: Keys;
   mfaEnabled: boolean;
@@ -249,7 +249,7 @@ export class AuthClient {
   }: {
     fullName?: string;
     companyName?: string;
-    emailNotifications?: { type: string; enabled: boolean }[];
+    emailNotifications?: Record<string, boolean>;
   }) {
     if (!this.user || !this.session) return;
 
