@@ -133,6 +133,7 @@ describe("updateProfile", () => {
     await client.auth.updateProfile({
       fullName: "updated fullName",
       companyName: "updated companyName",
+      emailNotifications: { type1: true, type2: false },
     });
 
     client.auth.signOut();
@@ -148,6 +149,7 @@ describe("updateProfile", () => {
 
     expect(session.fullName).toBe("updated fullName");
     expect(session.companyName).toBe("updated companyName");
+    expect(session.emailNotifications).toEqual({ type1: true, type2: false });
     client.auth.signOut();
   });
 });

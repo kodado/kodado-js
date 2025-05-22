@@ -226,7 +226,7 @@ export class CognitoClient {
         attributes.push(
           new CognitoUserAttribute({
             Name: "custom:emailNotifications",
-            Value: JSON.stringify(emailNotifications),
+            Value: emailNotifications,
           })
         );
       }
