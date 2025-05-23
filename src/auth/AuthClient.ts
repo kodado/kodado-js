@@ -534,6 +534,7 @@ export class AuthClient {
       }),
     });
 
-    return this.signIn({ email, password });
+    // MFA is disabled after using the recovery code, so signIn can't return "MFA_REQUIRED"
+    return this.signIn({ email, password }) as Promise<User>;
   }
 }
