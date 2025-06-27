@@ -1,6 +1,7 @@
 import { CognitoUserSession } from "amazon-cognito-identity-js";
 import { chunks } from "../helpers/chunks";
 import { Key } from "../api/types";
+import { UploadableFile } from "../helpers/uploadableFile";
 
 type ProfileAttributes = {
   username: string;
@@ -71,22 +72,29 @@ export class AuthApiClient {
     });
   }
 
-  async uploadUserProfileImage(image: any, token: string) {
+  async uploadUserProfileImage(image: UploadableFile, token: string) {
     const response = await fetch(`${this.endpoint}/auth/profile/image`, {
       method: "POST",
       headers: {
         Authorization: token,
+        "Content-Type": image.type,
+        "Content-Length": image.size.toString(),
       },
+      body: image.buffer.buffer,
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
 
-    await fetch(data.url, {
-      method: "PUT",
-      body: image,
-    });
+      try {
+        const data = await response.json();
+        if (data?.message) {
+          errorMessage += `: ${data.message}`;
+        }
+      } catch {}
 
-    return data;
+      throw new Error(errorMessage);
+    }
   }
 
   async getUserKeys(token: string) {
