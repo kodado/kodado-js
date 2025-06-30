@@ -277,7 +277,7 @@ export class AuthClient {
   }
 
   async uploadProfileImage(image: UploadableFile | File) {
-    let uploadableImage = isBrowserFile(image)
+    const uploadableImage = isBrowserFile(image)
       ? await toUploadableFile(image)
       : image;
 
