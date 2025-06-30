@@ -2,6 +2,12 @@ import { CognitoUserSession } from "amazon-cognito-identity-js";
 import { chunks } from "../helpers/chunks";
 import { Key } from "../api/types";
 import { UploadableFile } from "../helpers/uploadableFile";
+import {
+  FileIsMissingError,
+  UnexpectedError,
+  UnsupportedFileSizeError,
+  UnsupportedFileTypeError,
+} from "../errors";
 
 type ProfileAttributes = {
   username: string;
@@ -84,16 +90,23 @@ export class AuthApiClient {
     });
 
     if (!response.ok) {
-      let errorMessage = `Upload failed: ${response.status} ${response.statusText}`;
+      if (response.status === 413) {
+        throw new UnsupportedFileSizeError();
+      }
 
-      try {
-        const data = await response.json();
-        if (data?.message) {
-          errorMessage += `: ${data.message}`;
-        }
-      } catch {}
+      if (response.status === 400) {
+        try {
+          const data = await response.json<{ message?: string }>();
+          if (data?.message?.includes("Unsupported file type")) {
+            throw new UnsupportedFileTypeError(data.message);
+          }
+          if (data?.message?.includes("No image data provided")) {
+            throw new FileIsMissingError();
+          }
+        } catch {}
+      }
 
-      throw new Error(errorMessage);
+      throw new UnexpectedError("Uploading a profile image failed.");
     }
   }
 

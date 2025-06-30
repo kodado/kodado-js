@@ -157,3 +157,23 @@ export class CouldNotDecryptError extends Error {
     Object.setPrototypeOf(this, CouldNotDecryptError.prototype);
   }
 }
+
+export class UnsupportedFileTypeError extends Error {
+  constructor(message: string, ...params: any) {
+    super(...params);
+
+    this.name = "UnsupportedFileTypeError";
+    this.message = message;
+    Object.setPrototypeOf(this, UnsupportedFileTypeError.prototype);
+  }
+}
+
+export class UnsupportedFileSizeError extends Error {
+  constructor(...params: any) {
+    super(...params);
+
+    this.name = "UnsupportedFileSizeError";
+    this.message = `Unsupported file size. Only files up to 10 MB are allowed.`;
+    Object.setPrototypeOf(this, UnsupportedFileSizeError.prototype);
+  }
+}
