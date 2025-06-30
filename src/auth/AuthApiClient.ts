@@ -1,6 +1,13 @@
 import { CognitoUserSession } from "amazon-cognito-identity-js";
 import { chunks } from "../helpers/chunks";
 import { Key } from "../api/types";
+import { UploadableFile } from "../helpers/uploadableFile";
+import {
+  FileIsMissingError,
+  FileTooLargeError,
+  UnexpectedError,
+  UnsupportedFileTypeError,
+} from "../errors";
 
 type ProfileAttributes = {
   username: string;
@@ -71,22 +78,36 @@ export class AuthApiClient {
     });
   }
 
-  async uploadUserProfileImage(image: any, token: string) {
+  async uploadUserProfileImage(image: UploadableFile, token: string) {
     const response = await fetch(`${this.endpoint}/auth/profile/image`, {
       method: "POST",
       headers: {
         Authorization: token,
+        "Content-Type": image.type,
+        "Content-Length": image.size.toString(),
       },
+      body: image.buffer.buffer,
     });
 
-    const data = await response.json();
+    if (!response.ok) {
+      if (response.status === 413) {
+        throw new FileTooLargeError();
+      }
 
-    await fetch(data.url, {
-      method: "PUT",
-      body: image,
-    });
+      if (response.status === 400) {
+        const data = await response.json<{ message?: string }>();
 
-    return data;
+        if (data?.message?.includes("Unsupported file type")) {
+          throw new UnsupportedFileTypeError();
+        }
+
+        if (data?.message?.includes("No image data provided")) {
+          throw new FileIsMissingError();
+        }
+      }
+
+      throw new UnexpectedError(response.statusText);
+    }
   }
 
   async getUserKeys(token: string) {

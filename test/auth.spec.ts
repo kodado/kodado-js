@@ -1,4 +1,4 @@
-import { beforeAll, expect, describe, it } from "bun:test";
+import { beforeAll, expect, describe, it, beforeEach } from "bun:test";
 import fs from "fs";
 import path from "path";
 
@@ -10,6 +10,8 @@ import {
   UsernameAlreadyExistsError,
 } from "../src/errors/authErrors";
 import { safelyDeleteUser } from "./helpers/createUser";
+import { UploadableFile } from "../src/helpers/uploadableFile";
+import { FileTooLargeError, UnsupportedFileTypeError } from "../src/errors";
 
 const client = await createClient({
   typeDefs,
@@ -23,9 +25,9 @@ const client = await createClient({
 
 beforeAll(async () => {
   await safelyDeleteUser(client, {
-    email: "libTestUser@turingpoint.de",
+    email: "auth-lib-user@turingpoint.de",
     password: "Abcd1234!",
-    username: "",
+    username: "auth-lib-user",
   });
 });
 
@@ -150,26 +152,78 @@ describe("updateProfile", () => {
     expect(session.fullName).toBe("updated fullName");
     expect(session.companyName).toBe("updated companyName");
     expect(session.emailNotifications).toEqual({ type1: true, type2: false });
+
     client.auth.signOut();
   });
 });
 
 describe("uploadProfileImage", () => {
+  it("Should fail uploading large images", async () => {
+    await client.auth.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    const buffer = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/largefile.txt")
+    );
+
+    const file: UploadableFile = {
+      buffer,
+      name: "largefile.txt",
+      type: "image/png",
+      size: buffer.length,
+    };
+
+    expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
+      new FileTooLargeError()
+    );
+
+    client.auth.signOut();
+  });
+
+  it("Should fail uploading non image files", async () => {
+    await client.auth.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    const buffer = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/testfile.txt")
+    );
+
+    const file: UploadableFile = {
+      buffer,
+      name: "testfile.txt",
+      type: "text/plain",
+      size: buffer.length,
+    };
+
+    expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
+      new UnsupportedFileTypeError()
+    );
+
+    client.auth.signOut();
+  });
+
   it("Should upload a profile image", async () => {
     await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
 
-    const file = fs.readFileSync(
-      path.join(path.resolve(), "./test/fixtures/testfile.txt")
+    const buffer = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/testimage.png")
     );
 
-    try {
-      await client.auth.uploadProfileImage(file);
-    } catch (e) {
-      expect(false).toBe(true);
-    }
+    const image: UploadableFile = {
+      buffer,
+      name: "testimage.png",
+      type: "image/png",
+      size: buffer.length,
+    };
+
+    await client.auth.uploadProfileImage(image);
 
     client.auth.signOut();
 
@@ -179,13 +233,19 @@ describe("uploadProfileImage", () => {
     });
     client.auth.signOut();
 
-    if (session) {
-      expect(session.imageUrl).toBeTruthy();
-      // @ts-expect-error
-      expect(session.imageUrl.indexOf(process.env.KODADO_BUCKET_URL)).not.toBe(
-        -1
-      );
+    if (session === "MFA_REQUIRED") {
+      expect(false).toBe(true);
+      return;
     }
+
+    expect(session.imageUrl).toBeTruthy();
+
+    // @ts-expect-error
+    expect(session.imageUrl.indexOf(process.env.KODADO_BUCKET_URL)).not.toBe(
+      -1
+    );
+
+    client.auth.signOut();
   });
 });
 
