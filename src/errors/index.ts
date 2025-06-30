@@ -159,21 +159,21 @@ export class CouldNotDecryptError extends Error {
 }
 
 export class UnsupportedFileTypeError extends Error {
-  constructor(message: string, ...params: any) {
+  constructor(...params: any) {
     super(...params);
 
     this.name = "UnsupportedFileTypeError";
-    this.message = message;
+    this.message = `The type of the input file is unsupported`;
     Object.setPrototypeOf(this, UnsupportedFileTypeError.prototype);
   }
 }
 
-export class UnsupportedFileSizeError extends Error {
+export class FileTooLargeError extends Error {
   constructor(...params: any) {
     super(...params);
 
-    this.name = "UnsupportedFileSizeError";
-    this.message = `Unsupported file size. Only files up to 10 MB are allowed.`;
-    Object.setPrototypeOf(this, UnsupportedFileSizeError.prototype);
+    this.name = "FileTooLargeError";
+    this.message = `The input file is too large`;
+    Object.setPrototypeOf(this, FileTooLargeError.prototype);
   }
 }

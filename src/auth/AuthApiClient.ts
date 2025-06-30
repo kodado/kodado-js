@@ -4,8 +4,8 @@ import { Key } from "../api/types";
 import { UploadableFile } from "../helpers/uploadableFile";
 import {
   FileIsMissingError,
+  FileTooLargeError,
   UnexpectedError,
-  UnsupportedFileSizeError,
   UnsupportedFileTypeError,
 } from "../errors";
 
@@ -91,22 +91,24 @@ export class AuthApiClient {
 
     if (!response.ok) {
       if (response.status === 413) {
-        throw new UnsupportedFileSizeError();
+        throw new FileTooLargeError();
       }
 
       if (response.status === 400) {
+        let data;
         try {
-          const data = await response.json<{ message?: string }>();
-          if (data?.message?.includes("Unsupported file type")) {
-            throw new UnsupportedFileTypeError(data.message);
-          }
-          if (data?.message?.includes("No image data provided")) {
-            throw new FileIsMissingError();
-          }
+          data = await response.json<{ message?: string }>();
         } catch {}
+
+        if (data?.message?.includes("Unsupported file type")) {
+          throw new UnsupportedFileTypeError();
+        }
+        if (data?.message?.includes("No image data provided")) {
+          throw new FileIsMissingError();
+        }
       }
 
-      throw new UnexpectedError("Uploading a profile image failed.");
+      throw new UnexpectedError(response.statusText);
     }
   }
 

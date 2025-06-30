@@ -1,4 +1,4 @@
-import { beforeAll, expect, describe, it } from "bun:test";
+import { beforeAll, expect, describe, it, beforeEach } from "bun:test";
 import fs from "fs";
 import path from "path";
 
@@ -11,6 +11,7 @@ import {
 } from "../src/errors/authErrors";
 import { safelyDeleteUser } from "./helpers/createUser";
 import { UploadableFile } from "../src/helpers/uploadableFile";
+import { FileTooLargeError, UnsupportedFileTypeError } from "../src/errors";
 
 const client = await createClient({
   typeDefs,
@@ -157,32 +158,6 @@ describe("updateProfile", () => {
 });
 
 describe("uploadProfileImage", () => {
-  it("Should fail uploading non image files", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
-
-    const buffer = fs.readFileSync(
-      path.join(path.resolve(), "./test/fixtures/testfile.txt")
-    );
-
-    const file: UploadableFile = {
-      buffer,
-      name: "testfile.txt",
-      type: "text/plain",
-      size: buffer.length,
-    };
-
-    expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
-      /Unsupported file type/i
-    );
-
-    client.auth.signOut();
-  });
-});
-
-describe("uploadProfileImage", () => {
   it("Should fail uploading large images", async () => {
     await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
@@ -201,14 +176,36 @@ describe("uploadProfileImage", () => {
     };
 
     expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
-      /413 Request Entity Too Large/i
+      new FileTooLargeError()
     );
 
     client.auth.signOut();
   });
-});
 
-describe("uploadProfileImage", () => {
+  it("Should fail uploading non image files", async () => {
+    await client.auth.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    const buffer = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/testfile.txt")
+    );
+
+    const file: UploadableFile = {
+      buffer,
+      name: "testfile.txt",
+      type: "text/plain",
+      size: buffer.length,
+    };
+
+    expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
+      new UnsupportedFileTypeError()
+    );
+
+    client.auth.signOut();
+  });
+
   it("Should upload a profile image", async () => {
     await client.auth.signIn({
       email: "auth-lib-user@turingpoint.de",
