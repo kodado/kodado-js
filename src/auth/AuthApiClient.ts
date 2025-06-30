@@ -95,14 +95,12 @@ export class AuthApiClient {
       }
 
       if (response.status === 400) {
-        let data;
-        try {
-          data = await response.json<{ message?: string }>();
-        } catch {}
+        const data = await response.json<{ message?: string }>();
 
         if (data?.message?.includes("Unsupported file type")) {
           throw new UnsupportedFileTypeError();
         }
+
         if (data?.message?.includes("No image data provided")) {
           throw new FileIsMissingError();
         }
