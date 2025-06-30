@@ -276,16 +276,10 @@ export class AuthClient {
       emailNotifications || this.user.emailNotifications;
   }
 
-  async uploadProfileImage(image: File): Promise<void>;
-  async uploadProfileImage(image: UploadableFile): Promise<void>;
   async uploadProfileImage(image: UploadableFile | File) {
-    let uploadableImage: UploadableFile;
-
-    if (isBrowserFile(image)) {
-      uploadableImage = await toUploadableFile(image);
-    } else {
-      uploadableImage = image;
-    }
+    let uploadableImage = isBrowserFile(image)
+      ? await toUploadableFile(image)
+      : image;
 
     return await this.apiClient.uploadUserProfileImage(
       uploadableImage,
