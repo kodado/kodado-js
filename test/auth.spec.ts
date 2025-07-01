@@ -1,4 +1,4 @@
-import { beforeAll, expect, describe, it, beforeEach } from "bun:test";
+import { beforeAll, expect, describe, it } from "bun:test";
 import fs from "fs";
 import path from "path";
 
@@ -10,7 +10,7 @@ import {
   UsernameAlreadyExistsError,
 } from "../src/errors/authErrors";
 import { safelyDeleteUser } from "./helpers/createUser";
-import { UploadableFile } from "../src/helpers/uploadableFile";
+import { NodeFile } from "../src/helpers/file";
 import { FileTooLargeError, UnsupportedFileTypeError } from "../src/errors";
 
 const client = await createClient({
@@ -164,15 +164,11 @@ describe("uploadProfileImage", () => {
       password: "Abcd1234!",
     });
 
-    const buffer = fs.readFileSync(
-      path.join(path.resolve(), "./test/fixtures/largefile.txt")
-    );
-
-    const file: UploadableFile = {
-      buffer,
-      name: "largefile.txt",
+    const file: NodeFile = {
+      buffer: fs.readFileSync(
+        path.join(path.resolve(), "./test/fixtures/largefile.txt")
+      ),
       type: "image/png",
-      size: buffer.length,
     };
 
     expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
@@ -188,15 +184,11 @@ describe("uploadProfileImage", () => {
       password: "Abcd1234!",
     });
 
-    const buffer = fs.readFileSync(
-      path.join(path.resolve(), "./test/fixtures/testfile.txt")
-    );
-
-    const file: UploadableFile = {
-      buffer,
-      name: "testfile.txt",
+    const file: NodeFile = {
+      buffer: fs.readFileSync(
+        path.join(path.resolve(), "./test/fixtures/testfile.txt")
+      ),
       type: "text/plain",
-      size: buffer.length,
     };
 
     expect(client.auth.uploadProfileImage(file)).rejects.toThrow(
@@ -212,18 +204,14 @@ describe("uploadProfileImage", () => {
       password: "Abcd1234!",
     });
 
-    const buffer = fs.readFileSync(
-      path.join(path.resolve(), "./test/fixtures/testimage.png")
-    );
-
-    const image: UploadableFile = {
-      buffer,
-      name: "testimage.png",
+    const file: NodeFile = {
+      buffer: fs.readFileSync(
+        path.join(path.resolve(), "./test/fixtures/testimage.png")
+      ),
       type: "image/png",
-      size: buffer.length,
     };
 
-    await client.auth.uploadProfileImage(image);
+    await client.auth.uploadProfileImage(file);
 
     client.auth.signOut();
 
@@ -231,7 +219,6 @@ describe("uploadProfileImage", () => {
       email: "auth-lib-user@turingpoint.de",
       password: "Abcd1234!",
     });
-    client.auth.signOut();
 
     if (session === "MFA_REQUIRED") {
       expect(false).toBe(true);
@@ -244,6 +231,36 @@ describe("uploadProfileImage", () => {
     expect(session.imageUrl.indexOf(process.env.KODADO_BUCKET_URL)).not.toBe(
       -1
     );
+
+    client.auth.signOut();
+  });
+
+  it("Uploaded image should be the same as accessable via imageUrl", async () => {
+    const session = await client.auth.signIn({
+      email: "auth-lib-user@turingpoint.de",
+      password: "Abcd1234!",
+    });
+
+    if (session === "MFA_REQUIRED") {
+      expect(false).toBe(true);
+      return;
+    }
+
+    const originalBuffer = fs.readFileSync(
+      path.join(path.resolve(), "./test/fixtures/testimage.png")
+    );
+
+    const response = await fetch(session.imageUrl);
+
+    expect(response.ok).toBe(true);
+
+    const uploadedArrayBuffer = await response.arrayBuffer();
+    const uploadedBuffer = Buffer.from(uploadedArrayBuffer);
+
+    expect(uploadedBuffer.byteLength).toBe(originalBuffer.byteLength);
+    for (let i = 0; i < originalBuffer.length; i++) {
+      expect(uploadedBuffer[i]).toBe(originalBuffer[i]);
+    }
 
     client.auth.signOut();
   });

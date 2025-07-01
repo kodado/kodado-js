@@ -19,11 +19,7 @@ import {
 import { CognitoClient } from "./CognitoClient";
 import { AuthApiClient } from "./AuthApiClient";
 import { decryptItemKey, encryptItemKey } from "../api/crypto";
-import {
-  isBrowserFile,
-  toUploadableFile,
-  UploadableFile,
-} from "../helpers/uploadableFile";
+import { isBlob, NodeFile, toBlob } from "../helpers/file";
 
 type Keys = {
   encryptionSecretKey: string;
@@ -276,13 +272,11 @@ export class AuthClient {
       emailNotifications || this.user.emailNotifications;
   }
 
-  async uploadProfileImage(image: UploadableFile | File) {
-    const uploadableImage = isBrowserFile(image)
-      ? await toUploadableFile(image)
-      : image;
+  async uploadProfileImage(image: Blob | File | NodeFile) {
+    const blob = !isBlob(image) ? await toBlob(image) : image;
 
     return await this.apiClient.uploadUserProfileImage(
-      uploadableImage,
+      blob,
       (await this.getCurrentAuthorizationToken()) || ""
     );
   }
