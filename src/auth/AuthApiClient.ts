@@ -1,7 +1,6 @@
 import { CognitoUserSession } from "amazon-cognito-identity-js";
 import { chunks } from "../helpers/chunks";
 import { Key } from "../api/types";
-import { UploadableFile } from "../helpers/uploadableFile";
 import {
   FileIsMissingError,
   FileTooLargeError,
@@ -78,15 +77,14 @@ export class AuthApiClient {
     });
   }
 
-  async uploadUserProfileImage(image: UploadableFile, token: string) {
+  async uploadUserProfileImage(image: Blob, token: string) {
     const response = await fetch(`${this.endpoint}/auth/profile/image`, {
       method: "POST",
       headers: {
         Authorization: token,
         "Content-Type": image.type,
-        "Content-Length": image.size.toString(),
       },
-      body: image.buffer.buffer,
+      body: image,
     });
 
     if (!response.ok) {
