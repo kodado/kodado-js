@@ -39,3 +39,18 @@ export async function recreateUser(
     companyName: credentials.companyName,
   });
 }
+
+export function getUserCredentials(credentials: Credentials) {
+  const prefix =
+    process.env.VITE_USER_PREFIX || Math.random().toString(36).substring(7);
+
+  const prefixedCredentials: Credentials = {
+    email: `${prefix}-${credentials.email}`,
+    username: `${prefix}-${credentials.username}`,
+    password: credentials.password,
+    fullName: credentials.fullName,
+    companyName: credentials.companyName,
+  };
+
+  return prefixedCredentials;
+}
