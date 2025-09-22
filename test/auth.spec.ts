@@ -28,7 +28,6 @@ const credentials = getUserCredentials({
   password: "Abcd1234!",
   username: "auth-lib-user",
   fullName: "Auth Lib User",
-  companyName: "CompanyXYZ",
 });
 
 beforeAll(async () => {
@@ -69,7 +68,6 @@ describe("signIn", () => {
     expect(user.email).toBe(credentials.email);
     expect(user.nickname).toBe(credentials.username);
     expect(user.fullName).toBe(credentials.fullName);
-    expect(user.companyName).toBe(credentials.companyName);
     expect(user).toHaveProperty("keys");
     expect(user).toHaveProperty("keys.encryptionPublicKey");
     expect(user).toHaveProperty("keys.encryptionSecretKey");
@@ -119,7 +117,6 @@ describe("updateProfile", () => {
 
     await client.auth.updateProfile({
       fullName: "updated fullName",
-      companyName: "updated companyName",
       emailNotifications: { type1: true, type2: false },
     });
 
@@ -132,7 +129,6 @@ describe("updateProfile", () => {
     }
 
     expect(session.fullName).toBe("updated fullName");
-    expect(session.companyName).toBe("updated companyName");
     expect(session.emailNotifications).toEqual({ type1: true, type2: false });
 
     client.auth.signOut();

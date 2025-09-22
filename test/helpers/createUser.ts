@@ -5,7 +5,6 @@ export type Credentials = {
   password: string;
   username: string;
   fullName?: string;
-  companyName?: string;
 };
 
 export async function safelyDeleteUser(
@@ -36,7 +35,6 @@ export async function recreateUser(
     password: credentials.password,
     nickname: credentials.username,
     fullName: credentials.fullName,
-    companyName: credentials.companyName,
   });
 }
 
@@ -49,7 +47,6 @@ export function getUserCredentials(credentials: Credentials) {
     username: `${prefix}-${credentials.username}`,
     password: credentials.password,
     fullName: credentials.fullName,
-    companyName: credentials.companyName,
   };
 
   return prefixedCredentials;

@@ -31,7 +31,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "deepShare1",
     fullName: "Deep Share 1",
-    companyName: "Company 1",
   });
 
   await recreateUser(client, {
@@ -39,7 +38,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "deepShare2",
     fullName: "Deep Share 2",
-    companyName: "Company 2",
   });
 
   await recreateUser(client, {
@@ -47,7 +45,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "deepShare3",
     fullName: "Deep Share 3",
-    companyName: "Company 1",
   });
 
   await client.auth.signIn({
@@ -190,7 +187,6 @@ describe("shareItem", () => {
             username
             role
             fullName
-            companyName
           }
           createdAt
         }
@@ -211,13 +207,11 @@ describe("shareItem", () => {
           username: "deepShare2",
           role: "member",
           fullName: "Deep Share 2",
-          companyName: "Company 2",
         },
         {
           username: "deepShare1",
           role: "owner",
           fullName: "Deep Share 1",
-          companyName: "Company 1",
         },
       ])
     );

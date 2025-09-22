@@ -50,18 +50,16 @@ export class AuthApiClient {
 
   async updateUserProfile({
     fullName,
-    companyName,
     emailNotifications,
     token,
   }: {
     fullName?: string;
-    companyName?: string;
     emailNotifications?: string;
     token: string;
   }) {
     await fetch(`${this.endpoint}/auth/profile`, {
       method: "PUT",
-      body: JSON.stringify({ fullName, companyName, emailNotifications }),
+      body: JSON.stringify({ fullName, emailNotifications }),
       headers: {
         Authorization: token,
       },
