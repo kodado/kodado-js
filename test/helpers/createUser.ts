@@ -40,7 +40,7 @@ export async function recreateUser(
 
 export function getUserCredentials(credentials: Credentials) {
   const prefix =
-    process.env.VITE_USER_PREFIX || Math.random().toString(36).substring(7);
+    process.env.BUN_USER_PREFIX || Math.random().toString(36).substring(7);
 
   const prefixedCredentials: Credentials = {
     email: `${prefix}-${credentials.email}`,
