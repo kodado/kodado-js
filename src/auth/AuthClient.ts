@@ -33,7 +33,6 @@ export type User = {
   nickname: string;
   fullName: string;
   imageUrl: string;
-  companyName: string;
   emailNotifications?: Record<string, boolean>;
   userId: string;
   keys: Keys;
@@ -102,7 +101,6 @@ export class AuthClient {
       nickname: idToken.payload.nickname,
       fullName: idToken.payload.name,
       imageUrl: profile.imageUrl,
-      companyName: idToken.payload["custom:companyName"],
       emailNotifications: idToken.payload["custom:emailNotifications"]
         ? JSON.parse(idToken.payload["custom:emailNotifications"])
         : {},
@@ -166,7 +164,6 @@ export class AuthClient {
         nickname: idToken.payload.nickname,
         fullName: idToken.payload.name,
         imageUrl,
-        companyName: idToken.payload["custom:companyName"],
         emailNotifications: idToken.payload["custom:emailNotifications"]
           ? JSON.parse(idToken.payload["custom:emailNotifications"])
           : {},
@@ -203,13 +200,11 @@ export class AuthClient {
     password,
     nickname,
     fullName,
-    companyName,
   }: {
     email: string;
     password: string;
     nickname: string;
     fullName?: string;
-    companyName?: string;
   }) {
     const keys = generateKeys();
     const encryptedPrivateKeys: string = encryptPrivateKeys(keys, password);
@@ -221,7 +216,6 @@ export class AuthClient {
         nickname,
         encryptedPrivateKeys,
         fullName,
-        companyName,
       });
     } catch (e) {
       throw new UsernameAlreadyExistsError();
@@ -230,7 +224,6 @@ export class AuthClient {
     const userData = {
       username: nickname,
       fullName,
-      companyName,
       appId: "testApp",
       encryptionPublicKey: encodeBase64(keys.encryptionPublicKey),
       signPublicKey: encodeBase64(keys.signPublicKey),
@@ -245,29 +238,24 @@ export class AuthClient {
 
   async updateProfile({
     fullName,
-    companyName,
     emailNotifications,
   }: {
     fullName?: string;
-    companyName?: string;
     emailNotifications?: Record<string, boolean>;
   }) {
     if (!this.user || !this.session) return;
 
     await this.apiClient.updateUserProfile({
       fullName,
-      companyName,
       emailNotifications: JSON.stringify(emailNotifications),
       token: (await this.getCurrentAuthorizationToken()) || "",
     });
     await this.cognitoClient.updateCognitoProfile(this.session, {
       fullName,
-      companyName,
       emailNotifications: JSON.stringify(emailNotifications),
     });
 
     this.user.fullName = fullName || this.user.fullName;
-    this.user.companyName = companyName || this.user.companyName;
     this.user.emailNotifications =
       emailNotifications || this.user.emailNotifications;
   }
@@ -485,7 +473,6 @@ export class AuthClient {
       nickname: idToken.payload.nickname,
       fullName: idToken.payload.name,
       imageUrl,
-      companyName: idToken.payload["custom:companyName"],
       emailNotifications: idToken.payload["custom:emailNotifications"]
         ? JSON.parse(idToken.payload["custom:emailNotifications"])
         : {},

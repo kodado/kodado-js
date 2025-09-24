@@ -24,7 +24,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "bulkCreate1",
     fullName: "Bulk Create 1",
-    companyName: "Company 1",
   });
 
   await recreateUser(client, {
@@ -32,7 +31,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "bulkCreate2",
     fullName: "Bulk Create 2",
-    companyName: "Company 2",
   });
 
   await client.auth.signIn({

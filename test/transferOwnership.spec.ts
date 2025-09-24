@@ -30,7 +30,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "transfer1",
     fullName: "Transfer 1",
-    companyName: "Company 1",
   });
 
   await recreateUser(client, {
@@ -38,7 +37,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "transfer2",
     fullName: "Transfer 2",
-    companyName: "Company 2",
   });
 
   await recreateUser(client, {
@@ -46,7 +44,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "transfer3",
     fullName: "Transfer 3",
-    companyName: "Company 2",
   });
 
   await client.auth.signIn({

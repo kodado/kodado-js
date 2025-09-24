@@ -14,11 +14,10 @@ The `signUp` function registers a new user and derives encryption keys from the 
 
 ```typescript
 await client.auth.signUp({
-    email: "john.doe@example.com",
-    password: "SecurePassword123!",
-    username: "johndoe",
-    fullName: "John Doe",
-    companyName: "Example Corp",
+  email: "john.doe@example.com",
+  password: "SecurePassword123!",
+  username: "johndoe",
+  fullName: "John Doe",
 });
 ```
 
@@ -28,8 +27,8 @@ The `signIn` function authenticates an existing user using the SRP protocol.
 
 ```typescript
 await client.auth.signIn({
-    email: "john.doe@example.com",
-    password: "SecurePassword123!",
+  email: "john.doe@example.com",
+  password: "SecurePassword123!",
 });
 ```
 
@@ -39,8 +38,8 @@ The `updatePassword` function allows a user to change their password.
 
 ```typescript
 await client.auth.updatePassword({
-    oldPassword: "SecurePassword123!",
-    newPassword: "NewSecurePassword456!",
+  oldPassword: "SecurePassword123!",
+  newPassword: "NewSecurePassword456!",
 });
 ```
 

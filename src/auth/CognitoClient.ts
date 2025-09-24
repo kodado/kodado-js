@@ -17,7 +17,6 @@ type UserAttributes = {
   password: string;
   encryptedPrivateKeys?: string;
   fullName?: string;
-  companyName?: string;
 };
 
 type UserPool = {
@@ -104,7 +103,6 @@ export class CognitoClient {
     password,
     encryptedPrivateKeys,
     fullName,
-    companyName,
   }: UserAttributes): Promise<ISignUpResult | undefined> {
     const userPool = new CognitoUserPool(this.userpool);
 
@@ -127,15 +125,6 @@ export class CognitoClient {
     if (fullName) {
       userAttributes.push(
         new CognitoUserAttribute({ Name: "name", Value: fullName })
-      );
-    }
-
-    if (companyName) {
-      userAttributes.push(
-        new CognitoUserAttribute({
-          Name: "custom:companyName",
-          Value: companyName,
-        })
       );
     }
 
@@ -185,11 +174,9 @@ export class CognitoClient {
     session: CognitoUserSession,
     {
       fullName,
-      companyName,
       emailNotifications,
     }: {
       fullName?: string;
-      companyName?: string;
       emailNotifications?: string;
     }
   ) {
@@ -209,15 +196,6 @@ export class CognitoClient {
           new CognitoUserAttribute({
             Name: "name",
             Value: fullName,
-          })
-        );
-      }
-
-      if (companyName) {
-        attributes.push(
-          new CognitoUserAttribute({
-            Name: "custom:companyName",
-            Value: companyName,
           })
         );
       }

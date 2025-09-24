@@ -21,7 +21,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "publicKeyStorage1",
     fullName: "Deep Share 1",
-    companyName: "Company 1",
   });
 
   await recreateUser(client, {
@@ -29,7 +28,6 @@ beforeAll(async () => {
     password: "Abcd1234!",
     username: "publicKeyStorage2",
     fullName: "Deep Share 2",
-    companyName: "Company 2",
   });
 });
 
