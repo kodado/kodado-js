@@ -4,7 +4,11 @@ import gql from "graphql-tag";
 import { createClient } from "../src";
 import typeDefs from "./fixtures/schema";
 
-import { recreateUser } from "./helpers/createUser";
+import {
+  getUserCredentials,
+  recreateUser,
+  safelyDeleteUser,
+} from "./helpers/createUser";
 
 let id: string;
 
@@ -18,20 +22,22 @@ const client = await createClient({
   endpoint: process.env.KODADO_URL || "",
 });
 
+const credentials = getUserCredentials({
+  email: "updatePwUser@turingpoint.de",
+  password: "Abcd1234!",
+  username: "updatePwUser",
+});
+
 beforeAll(async () => {
-  await recreateUser(client, {
-    email: "updatePwUser@turingpoint.de",
-    password: "Abcd1234!",
-    username: "updatePwUser",
-  });
+  await safelyDeleteUser(client, { ...credentials, password: "Abcd12345!" });
+  await safelyDeleteUser(client, { ...credentials, password: "Abcd123456!" });
+
+  await recreateUser(client, credentials);
 });
 
 describe("updatePassword", () => {
   it("Should update the user's pw", async () => {
-    await client.auth.signIn({
-      email: "updatePwUser@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
     const qry = gql`
       mutation createTodo($item: String!) {
         createItem(item: $item, type: "Todo") {
@@ -50,10 +56,13 @@ describe("updatePassword", () => {
     });
     id = insertedTodo.id;
 
+    const oldPassword = credentials.password;
+    credentials.password = "Abcd12345!";
+
     try {
       await client.auth.updatePassword({
-        oldPassword: "Abcd1234!",
-        newPassword: "Abcd12345!",
+        oldPassword,
+        newPassword: credentials.password,
       });
     } catch (e) {
       console.log(e);
@@ -61,11 +70,8 @@ describe("updatePassword", () => {
 
     client.auth.signOut();
 
-    const session = await client.auth.signIn({
-      email: "updatePwUser@turingpoint.de",
-      password: "Abcd12345!",
-    });
-    expect(session?.email).toBe("updatePwUser@turingpoint.de");
+    const session = await client.auth.signIn(credentials);
+    expect(session?.email).toBe(credentials.email);
 
     const todoQuery = gql`
       query getTodo($id: String!) {
@@ -98,10 +104,7 @@ describe("updatePassword", () => {
   });
 
   it("Should work with a large amount of items", async () => {
-    await client.auth.signIn({
-      email: "updatePwUser@turingpoint.de",
-      password: "Abcd12345!",
-    });
+    await client.auth.signIn(credentials);
 
     // Create > 5000 Todos
     for (let i = 0; i < 201; i++) {
@@ -120,10 +123,13 @@ describe("updatePassword", () => {
       });
     }
 
+    const oldPassword = credentials.password;
+    credentials.password = "Abcd123456!";
+
     try {
       await client.auth.updatePassword({
-        oldPassword: "Abcd12345!",
-        newPassword: "Abcd1234!",
+        oldPassword,
+        newPassword: credentials.password,
       });
     } catch (e) {
       console.log(e);
@@ -131,11 +137,8 @@ describe("updatePassword", () => {
 
     client.auth.signOut();
 
-    const session = await client.auth.signIn({
-      email: "updatePwUser@turingpoint.de",
-      password: "Abcd1234!",
-    });
-    expect(session?.email).toBe("updatePwUser@turingpoint.de");
+    const session = await client.auth.signIn(credentials);
+    expect(session?.email).toBe(credentials.email);
 
     const todoQuery = gql`
       query getTodo($id: String!) {
@@ -169,9 +172,6 @@ describe("updatePassword", () => {
 });
 
 afterAll(async () => {
-  await client.auth.signIn({
-    email: "updatePwUser@turingpoint.de",
-    password: "Abcd1234!",
-  });
+  await client.auth.signIn(credentials);
   await client.auth.deleteUser();
 });

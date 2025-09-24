@@ -9,7 +9,7 @@ import {
   WrongCredentialsError,
   UsernameAlreadyExistsError,
 } from "../src/errors/authErrors";
-import { safelyDeleteUser } from "./helpers/createUser";
+import { getUserCredentials, safelyDeleteUser } from "./helpers/createUser";
 import { NodeFile } from "../src/helpers/file";
 import { FileTooLargeError, UnsupportedFileTypeError } from "../src/errors";
 
@@ -23,33 +23,33 @@ const client = await createClient({
   endpoint: process.env.KODADO_URL || "",
 });
 
+const credentials = getUserCredentials({
+  email: "auth-lib-user@turingpoint.de",
+  password: "Abcd1234!",
+  username: "auth-lib-user",
+  fullName: "Auth Lib User",
+  companyName: "CompanyXYZ",
+});
+
 beforeAll(async () => {
-  await safelyDeleteUser(client, {
-    email: "auth-lib-user@turingpoint.de",
-    password: "Abcd1234!",
-    username: "auth-lib-user",
-  });
+  await safelyDeleteUser(client, credentials);
 });
 
 describe("signUp", () => {
   it("Should sign up a new user", async () => {
     const result = await client.auth.signUp({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-      nickname: "auth-lib-user",
-      fullName: "Auth Lib User",
-      companyName: "CompanyXYZ",
+      ...credentials,
+      nickname: credentials.username,
     });
 
-    expect(result?.username).toBe("auth-lib-user");
+    expect(result?.username).toBe(credentials.username);
   });
 
   it("Should throw error if email was already taken", async () => {
     try {
       await client.auth.signUp({
-        email: "auth-lib-user@turingpoint.de",
-        password: "Abcd1234!",
-        nickname: "auth-lib-user",
+        ...credentials,
+        nickname: credentials.username,
       });
     } catch (e) {
       expect(e).toBeInstanceOf(UsernameAlreadyExistsError);
@@ -59,20 +59,17 @@ describe("signUp", () => {
 
 describe("signIn", () => {
   it("Should sign the user in", async () => {
-    const user = await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    const user = await client.auth.signIn(credentials);
 
     if (!user) {
       expect(false).toBe(true);
       return;
     }
 
-    expect(user.email).toBe("auth-lib-user@turingpoint.de");
-    expect(user.nickname).toBe("auth-lib-user");
-    expect(user.fullName).toBe("Auth Lib User");
-    expect(user.companyName).toBe("CompanyXYZ");
+    expect(user.email).toBe(credentials.email);
+    expect(user.nickname).toBe(credentials.username);
+    expect(user.fullName).toBe(credentials.fullName);
+    expect(user.companyName).toBe(credentials.companyName);
     expect(user).toHaveProperty("keys");
     expect(user).toHaveProperty("keys.encryptionPublicKey");
     expect(user).toHaveProperty("keys.encryptionSecretKey");
@@ -86,8 +83,8 @@ describe("signIn", () => {
   it("Should throw error if user is not found", async () => {
     try {
       await client.auth.signIn({
+        ...credentials,
         email: "notexisting@test.de",
-        password: "Abcd1234!",
       });
       expect(false).toBe(true);
     } catch (e) {
@@ -97,10 +94,7 @@ describe("signIn", () => {
 
   it("Should throw an error if password is wrong", async () => {
     try {
-      await client.auth.signIn({
-        email: "auth-lib-user@turingpoint.de",
-        password: "wrongpw",
-      });
+      await client.auth.signIn({ ...credentials, password: "wrongpw" });
       expect(false).toBe(true);
     } catch (e) {
       expect(e).toBeInstanceOf(WrongCredentialsError);
@@ -109,14 +103,8 @@ describe("signIn", () => {
 
   it("Should throw error if user is already signed in.", async () => {
     try {
-      await client.auth.signIn({
-        email: "auth-lib-user@turingpoint.de",
-        password: "Abcd1234!",
-      });
-      await client.auth.signIn({
-        email: "auth-lib-user@turingpoint.de",
-        password: "Abcd1234!",
-      });
+      await client.auth.signIn(credentials);
+      await client.auth.signIn(credentials);
       expect(false).toBe(true);
     } catch (e) {
       expect(e).toBeInstanceOf(AlreadySignedInError);
@@ -127,10 +115,7 @@ describe("signIn", () => {
 
 describe("updateProfile", () => {
   it("Should update the profile", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
 
     await client.auth.updateProfile({
       fullName: "updated fullName",
@@ -139,10 +124,7 @@ describe("updateProfile", () => {
     });
 
     client.auth.signOut();
-    const session = await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    const session = await client.auth.signIn(credentials);
 
     if (!session) {
       expect(false).toBe(true);
@@ -159,10 +141,7 @@ describe("updateProfile", () => {
 
 describe("uploadProfileImage", () => {
   it("Should fail uploading large images", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
 
     const file: NodeFile = {
       buffer: fs.readFileSync(
@@ -179,10 +158,7 @@ describe("uploadProfileImage", () => {
   });
 
   it("Should fail uploading non image files", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
 
     const file: NodeFile = {
       buffer: fs.readFileSync(
@@ -199,10 +175,7 @@ describe("uploadProfileImage", () => {
   });
 
   it("Should upload a profile image", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
 
     const file: NodeFile = {
       buffer: fs.readFileSync(
@@ -215,10 +188,7 @@ describe("uploadProfileImage", () => {
 
     client.auth.signOut();
 
-    const session = await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    const session = await client.auth.signIn(credentials);
 
     if (session === "MFA_REQUIRED") {
       expect(false).toBe(true);
@@ -236,10 +206,7 @@ describe("uploadProfileImage", () => {
   });
 
   it("Uploaded image should be the same as accessable via imageUrl", async () => {
-    const session = await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    const session = await client.auth.signIn(credentials);
 
     if (session === "MFA_REQUIRED") {
       expect(false).toBe(true);
@@ -268,18 +235,12 @@ describe("uploadProfileImage", () => {
 
 describe("deleteUser", () => {
   it("Should delete the current user", async () => {
-    await client.auth.signIn({
-      email: "auth-lib-user@turingpoint.de",
-      password: "Abcd1234!",
-    });
+    await client.auth.signIn(credentials);
 
     await client.auth.deleteUser();
 
     try {
-      await client.auth.signIn({
-        email: "auth-lib-user@turingpoint.de",
-        password: "Abcd1234!",
-      });
+      await client.auth.signIn(credentials);
       expect(false).toBe(true);
     } catch (e) {
       if (e instanceof WrongCredentialsError) {
